@@ -107,7 +107,7 @@ Then add `Flow` as a dependency to your target:
 .target(
     name: "MyApp",
     dependencies: [
-        .product(name: "Flow", package: "flow-swift")
+        .product(name: "Flow", package: "flow-swift-macos")
     ]
 )
 ```
