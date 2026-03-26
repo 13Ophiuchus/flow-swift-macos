@@ -1,4 +1,4 @@
-```markdown
+
 # flow-swift (Swift 6 & Swift Testing Migration)
 
 This fork updates the original Outblock `flow-swift` SDK and tests for Swift 6, modern concurrency, and Swift Testing. It focuses on safety, test reliability, and compatibility with current Flow tooling and APIs.
@@ -171,6 +171,4 @@ swift test --filter FlowAccessAPIOnTestnetTests
 
 - Tests as specification  
   - Encoding tests (especially RLP) serve as a compatibility spec; do not change expected hex outputs unless you are intentionally changing encoding semantics and understand the implications for network compatibility.
-```
 
-\
