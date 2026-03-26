@@ -15,18 +15,18 @@
 	//  See the License for the specific language governing permissions and
 	//  limitations under the License.
 	//
-
+	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 import Foundation
 import SwiftUI
 
-extension Double {
+public extension Double {
 	func roundToDecimal(_ fractionDigits: Int) -> Double {
 		let multiplier = pow(10, Double(fractionDigits))
 		return (self * multiplier).rounded() / multiplier
 	}
 }
 
-extension Decimal {
+public extension Decimal {
 	func tokenFormat(maximumFractionDigits: Int = 8) -> String {
 		let formatter = NumberFormatter()
 		formatter.maximumFractionDigits = maximumFractionDigits

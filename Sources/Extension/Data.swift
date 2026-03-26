@@ -16,7 +16,7 @@
 	//  See the License for the specific language governing permissions and
 	//  limitations under the License.
 	//
-
+	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 import Foundation
 import SwiftUI
 
@@ -29,7 +29,7 @@ extension Collection {
 
 public extension Array where Element == UInt8 {
 		/// Convert to `Data` type
-	var  Data { .init(self) }
+	var  data: Data { .init(self) }
 
 		/// Convert bytes to hex string
 	var hexValue: String { map { .init(format: "%02x", $0) }.joined() }
@@ -85,12 +85,12 @@ public extension Array where Element == UInt8 {
 
 public extension Data {
 	/// Convert data to list of byte
-	internal var bytes: Bytes {
+	 var bytes: Bytes {
 		Bytes(self)
 	}
 
 		/// Initial the data with hex string
-	internal static func fromHex(_ hex: String) -> Data? {
+	 static func fromHex(_ hex: String) -> Data? {
 		let string = hex.lowercased().stripHexPrefix()
 		guard let array = string.data(using: .utf8)?.bytes else {
 			return nil

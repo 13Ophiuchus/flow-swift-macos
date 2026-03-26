@@ -2,127 +2,226 @@
 	//  FlowPublisher.swift
 	//  Flow
 	//
-	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+	//  Async event bus for Flow websocket / access APIs.
+	//  Converted from Combine-based implementation to AsyncStream
+	//  by Nicholas Reich on 2026-03-24.
 	//
 
 import Foundation
-import Combine
 
 public extension Flow {
-		/// Represents different types of events that can be published
+
+		/// Represents different types of events that can be published.
 	enum PublisherEvent {
 		case transactionStatus(id: Flow.ID, status: Flow.TransactionResult)
 		case accountUpdate(address: Flow.Address)
 		case connectionStatus(isConnected: Bool)
-		case walletResponse(approved: Bool,  [String: Any])
+		case walletResponse(approved: Bool, [String: Any])
 		case block(id: Flow.ID, height: String, timestamp: Date)
 		case error(Error)
 	}
 
-		/// Central publisher manager for Flow events
-	final class Publisher {
-		public static let shared = Publisher()
+		/// Central publisher manager for Flow events (AsyncStream-based).
+	@FlowWebsocketActor
+	final class Publisher: @unchecked Sendable {
 
-			// Main publisher for all events
-		private let eventSubject = PassthroughSubject<PublisherEvent, Never>()
+			// Box type to carry non-Sendable wallet payload across concurrency boundaries.
+		final class WalletPayloadBox: @unchecked Sendable {
+			let approved: Bool
+			let data: [String: Any]
 
-			// Specific publishers for different event types
-		public var transactionPublisher: AnyPublisher<(Flow.ID, Flow.TransactionResult), Never> {
-			eventSubject
-				.compactMap { event in
-					if case let .transactionStatus(id, status) = event {
-						return (id, status)
-					}
-					return nil
+			init(approved: Bool,  data: [String: Any]) {
+				self.approved = approved
+				self.data = data
+			}
+		}
+
+		static let shared = Publisher()
+
+			// MARK: - Continuation registries
+
+		private typealias TxPair = (Flow.ID, Flow.TransactionResult)
+
+		private var transactionContinuations: [UUID: AsyncStream<TxPair>.Continuation] = [:]
+		private var accountContinuations: [UUID: AsyncStream<Flow.Address>.Continuation] = [:]
+		private var blockContinuations: [UUID: AsyncStream<WSBlockHeader>.Continuation] = [:]
+		private var connectionContinuations: [UUID: AsyncStream<Bool>.Continuation] = [:]
+		private var walletContinuations: [UUID: AsyncStream<WalletPayloadBox>.Continuation] = [:]
+		private var errorContinuations: [UUID: AsyncStream<Error>.Continuation] = [:]
+
+			// Simple block header model used by block streams.
+		public struct WSBlockHeader: Sendable {
+			public let blockId: Flow.ID
+			public let height: String
+			public let timestamp: Date
+
+			public init(blockId: Flow.ID, height: String, timestamp: Date) {
+				self.blockId = blockId
+				self.height = height
+				self.timestamp = timestamp
+			}
+		}
+
+			// MARK: - Init
+
+		private init() { }
+
+			// MARK: - Stream factories
+			//
+			// These are nonisolated so they can return AsyncStream (which is not Sendable).
+			// All state access (continuation dictionaries) happens inside @FlowWebsocketActor tasks.
+
+		nonisolated public func transactionStream() -> AsyncStream<(Flow.ID, Flow.TransactionResult)> {
+			AsyncStream { continuation in
+				let id = UUID()
+				_Concurrency.Task { @FlowWebsocketActor in
+					self.transactionContinuations[id] = continuation
 				}
-				.eraseToAnyPublisher()
-		}
-
-		public var accountPublisher: AnyPublisher<Flow.Address, Never> {
-			eventSubject
-				.compactMap { event in
-					if case let .accountUpdate(address) = event {
-						return address
+				continuation.onTermination = { _ in
+					_Concurrency.Task { @FlowWebsocketActor in
+						self.transactionContinuations[id] = nil
 					}
-					return nil
 				}
-				.eraseToAnyPublisher()
+			}
 		}
 
-		public var blockPublisher: AnyPublisher<Flow.WSBlockHeader, Never> {
-			eventSubject
-				.compactMap { event in
-					if case let .block(id, height, timestamp) = event {
-						return WSBlockHeader(blockId: id, height: height, timestamp: timestamp)
+		nonisolated public func accountStream() -> AsyncStream<Flow.Address> {
+			AsyncStream { continuation in
+				let id = UUID()
+				_Concurrency.Task { @FlowWebsocketActor in
+					self.accountContinuations[id] = continuation
+				}
+				continuation.onTermination = { _ in
+					_Concurrency.Task { @FlowWebsocketActor in
+						self.accountContinuations[id] = nil
 					}
-					return nil
 				}
-				.eraseToAnyPublisher()
+			}
 		}
 
-		public var connectionPublisher: AnyPublisher<Bool, Never> {
-			eventSubject
-				.compactMap { event in
-					if case let .connectionStatus(isConnected) = event {
-						return isConnected
+		nonisolated public func blockStream() -> AsyncStream<WSBlockHeader> {
+			AsyncStream { continuation in
+				let id = UUID()
+				_Concurrency.Task { @FlowWebsocketActor in
+					self.blockContinuations[id] = continuation
+				}
+				continuation.onTermination = { _ in
+					_Concurrency.Task { @FlowWebsocketActor in
+						self.blockContinuations[id] = nil
 					}
-					return nil
 				}
-				.eraseToAnyPublisher()
+			}
 		}
 
-		public var walletResponsePublisher: AnyPublisher<(Bool, [String: Any]), Never> {
-			eventSubject
-				.compactMap { event in
-					if case let .walletResponse(approved, data) = event {
-						return (approved, data)
+		nonisolated public func connectionStream() -> AsyncStream<Bool> {
+			AsyncStream { continuation in
+				let id = UUID()
+				_Concurrency.Task { @FlowWebsocketActor in
+					self.connectionContinuations[id] = continuation
+				}
+				continuation.onTermination = { _ in
+					_Concurrency.Task { @FlowWebsocketActor in
+						self.connectionContinuations[id] = nil
 					}
-					return nil
 				}
-				.eraseToAnyPublisher()
+			}
 		}
 
-		public var errorPublisher: AnyPublisher<Error, Never> {
-			eventSubject
-				.compactMap { event in
-					if case let .error(error) = event {
-						return error
+			// New wallet stream API: bridges WalletPayloadBox → tuple
+		nonisolated public func walletResponseStream() -> AsyncStream<(approved: Bool, [String: Any])> {
+			AsyncStream { continuation in
+				let id = UUID()
+
+				_Concurrency.Task { @FlowWebsocketActor in
+						// Inner stream whose continuations we store by UUID.
+					let inner = AsyncStream<WalletPayloadBox> { innerCont in
+						self.walletContinuations[id] = innerCont
+						innerCont.onTermination = { _ in
+							_Concurrency.Task { @FlowWebsocketActor in
+								self.walletContinuations[id] = nil
+							}
+						}
 					}
-					return nil
+
+						// Forward from inner boxes to outer tuple stream.
+					_Concurrency.Task {
+						for await box in inner {
+							continuation.yield((box.approved, box.data))
+						}
+						continuation.finish()
+					}
 				}
-				.eraseToAnyPublisher()
+
+				continuation.onTermination = { _ in
+					_Concurrency.Task { @FlowWebsocketActor in
+						self.walletContinuations[id] = nil
+					}
+				}
+			}
 		}
 
-		private init() {}
-
-			// Method to publish events
-		public func publish(_ event: PublisherEvent) {
-			eventSubject.send(event)
+		nonisolated public func errorStream() -> AsyncStream<Error> {
+			AsyncStream { continuation in
+				let id = UUID()
+				_Concurrency.Task { @FlowWebsocketActor in
+					self.errorContinuations[id] = continuation
+				}
+				continuation.onTermination = { _ in
+					_Concurrency.Task { @FlowWebsocketActor in
+						self.errorContinuations[id] = nil
+					}
+				}
+			}
 		}
 
-			// Convenience methods for publishing specific events
+			// MARK: - Publish helpers
+			//
+			// These are actor-isolated (no 'nonisolated') and only used from
+			// Flow websocket / access API code.
+
 		public func publishTransactionStatus(id: Flow.ID, status: Flow.TransactionResult) {
-			publish(.transactionStatus(id: id, status: status))
+			for continuation in transactionContinuations.values {
+				continuation.yield((id, status))
+			}
 		}
 
 		public func publishAccountUpdate(address: Flow.Address) {
-			publish(.accountUpdate(address: address))
+			for continuation in accountContinuations.values {
+				continuation.yield(address)
+			}
 		}
 
 		public func publishConnectionStatus(isConnected: Bool) {
-			publish(.connectionStatus(isConnected: isConnected))
+			for continuation in connectionContinuations.values {
+				continuation.yield(isConnected)
+			}
 		}
 
-		public func publishWalletResponse(approved: Bool,  [String: Any]) {
-			publish(.walletResponse(approved: approved,  data))
+		public func publishWalletResponse(approved: Bool, data: [String: Any]) {
+			let box = WalletPayloadBox(approved: approved,  data: data)
+			for continuation in walletContinuations.values {
+				continuation.yield(box)
+			}
+		}
+
+		public func publishBlock(id: Flow.ID, height: String, timestamp: Date) {
+			let header = WSBlockHeader(blockId: id, height: height, timestamp: timestamp)
+			for continuation in blockContinuations.values {
+				continuation.yield(header)
+			}
 		}
 
 		public func publishError(_ error: Error) {
-			publish(.error(error))
+			for continuation in errorContinuations.values {
+				continuation.yield(error)
+			}
 		}
 	}
+}
 
-		// Extension to Flow for easy access to publisher
+// Extension to Flow for easy access to publisher
+@FlowWebsocketActor
+public extension Flow {
 	var publisher: Publisher {
 		Publisher.shared
 	}

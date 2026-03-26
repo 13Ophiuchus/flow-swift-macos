@@ -15,11 +15,16 @@
 	//  See the License for the specific language governing permissions and
 	//  limitations under the License.
 	//
+	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+	//
+
 import Foundation
+	// No need for NIOSSL here; this is a pure model file.
 
 public extension Flow {
-		/// The signature algorithm supported by flow which include `.ECDSA_P256` and `.ECDSA_SECP256k1`
-	enum SignatureAlgorithm: String, CaseIterable, Codable {
+
+		/// Public key signing algorithm (ECDSA P-256, ECDSA secp256k1, etc).
+	enum SignatureAlgorithm: String, CaseIterable, Codable, Sendable {
 		case unknown
 		case ECDSA_P256
 		case ECDSA_SECP256k1 = "ECDSA_secp256k1"
@@ -28,9 +33,7 @@ public extension Flow {
 			switch self {
 				case .unknown:
 					return "unknown"
-				case .ECDSA_P256:
-					return "ECDSA"
-				case .ECDSA_SECP256k1:
+				case .ECDSA_P256, .ECDSA_SECP256k1:
 					return "ECDSA"
 			}
 		}
@@ -88,8 +91,8 @@ public extension Flow {
 		}
 	}
 
-		/// The hash algorithm supported by flow which include `.SHA2_256`, `.SHA2_384`, `.SHA3_256` and `.SHA3_384`
-	enum HashAlgorithm: String, CaseIterable, Codable {
+		/// Message-digest algorithm for signing (SHA2-256, SHA3-256, etc).
+	enum HashAlgorithm: String, CaseIterable, Codable, Sendable {
 		case unknown
 		case SHA2_256
 		case SHA2_384
@@ -115,13 +118,9 @@ public extension Flow {
 			switch self {
 				case .unknown:
 					return -1
-				case .SHA2_256:
+				case .SHA2_256, .SHA3_256:
 					return 256
-				case .SHA2_384:
-					return 384
-				case .SHA3_256:
-					return 256
-				case .SHA3_384:
+				case .SHA2_384, .SHA3_384:
 					return 384
 			}
 		}
@@ -145,13 +144,9 @@ public extension Flow {
 			switch self {
 				case .unknown:
 					return -1
-				case .SHA2_256:
+				case .SHA2_256, .SHA2_384:
 					return 1
-				case .SHA2_384:
-					return 1
-				case .SHA3_256:
-					return 3
-				case .SHA3_384:
+				case .SHA3_256, .SHA3_384:
 					return 3
 			}
 		}

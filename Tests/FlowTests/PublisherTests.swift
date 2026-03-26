@@ -2,164 +2,109 @@
 	//  PublisherTests.swift
 	//  FlowTests
 	//
-	//  Migrated from XCTest to Swift Testing by Nicholas Reich on 2026-03-19.
+	//  Migrated to Swift Testing by Nicholas Reich on 2026-03-19.
 	//
 
-import Combine
-import Flow
+import Foundation
 import Testing
+@testable import Flow
 
 @Suite
 struct PublisherTests {
-	private var cancellables = Set<AnyCancellable>()
 
-	init() { }
-
-		// MARK: - Account Update Tests
-
-	@Test(
-		"Account update is published to subscribers",
-		.timeLimit(.seconds(2))
-	)
-	mutating func accountUpdatePublishing() async throws {
-		let testAddress = Flow.Address(hex: "0x0123456789abcdef")
-		var receivedAddress: Flow.Address?
-
-		let expectation = AsyncExpectation<Void>()
-
-		Flow.Publisher.shared.accountPublisher
-			.sink { address in
-				receivedAddress = address
-				expectation.fulfill()
+	private func awaitFirstValue<T: Sendable>(
+		from stream: AsyncStream<T>,
+		timeoutSeconds: Double = 60
+	) async -> T? {
+		await withTaskGroup(of: T?.self) { group in
+			group.addTask {
+				for await value in stream {
+					return value
+				}
+				return nil
 			}
-			.store(in: &cancellables)
 
-		Flow.Publisher.shared.publishAccountUpdate(address: testAddress)
+			group.addTask {
+				let ns = UInt64(timeoutSeconds * 1_000_000_000)
+				try? await _Concurrency.Task.sleep(nanoseconds: ns)
+				return nil
+			}
 
-		try await expectation.value
-		#expect(receivedAddress == testAddress)
+			let first = await group.next() ?? nil
+			group.cancelAll()
+			return first
+		}
 	}
 
-		// MARK: - Connection Status Tests
+	@Test("Flow account publisher emits account updates")
+	func accountPublisherEmits() async {
+		let address = Flow.Address(hex: "0x01")
+		let center = Flow.PublisherCenter.shared
 
-	@Test(
-		"Connection status is published",
-		.timeLimit(.seconds(2))
-	)
-	mutating func connectionStatusPublishing() async throws {
-		let testStatus = true
-		var receivedStatus: Bool?
+		let stream = center.accountPublisher(address: address)
+		center.publishAccountUpdate(address: address)
 
-		let expectation = AsyncExpectation<Void>()
-
-		Flow.Publisher.shared.connectionPublisher
-			.sink { status in
-				receivedStatus = status
-				expectation.fulfill()
-			}
-			.store(in: &cancellables)
-
-		Flow.Publisher.shared.publishConnectionStatus(isConnected: testStatus)
-
-		try await expectation.value
-		#expect(receivedStatus == testStatus)
+		let value = await awaitFirstValue(from: stream)
+		#expect(value == address)
 	}
 
-		// MARK: - Wallet Response Tests
+	@Test("Flow connection publisher emits connection status updates")
+	func connectionPublisherEmits() async {
+		let center = Flow.PublisherCenter.shared
 
-	@Test(
-		"Wallet response is published",
-		.timeLimit(.seconds(2))
-	)
-	mutating func walletResponsePublishing() async throws {
-		let testApproved = true
-		let testData: [String: Any] = ["key": "value"]
-		var receivedApproved: Bool?
-		var receivedData: [String: Any]?
+		let stream = center.connectionPublisher()
+		center.publishConnectionStatus(isConnected: true)
 
-		let expectation = AsyncExpectation<Void>()
+		let value = await awaitFirstValue(from: stream)
+		#expect(value == true)
+	}
 
-		Flow.Publisher.shared.walletResponsePublisher
-			.sink { approved, data in
-				receivedApproved = approved
-				receivedData = data
-				expectation.fulfill()
-			}
-			.store(in: &cancellables)
+	@Test("Flow wallet response publisher emits responses")
+	func walletResponsePublisherEmits() async {
+		let center = Flow.PublisherCenter.shared
+		let stream = center.walletResponsePublisher()
 
-		Flow.Publisher.shared.publishWalletResponse(
-			approved: testApproved,
-			testData
+		let sample = Flow.WalletResponse(
+			id: 1,
+			jsonrpc: "2.0",
+			requestId: "test",
+			approved: true
 		)
 
-		try await expectation.value
-		#expect(receivedApproved == testApproved)
-		#expect((receivedData?["key"] as? String) == (testData["key"] as? String))
+		center.publishWalletResponse(sample)
+
+		let value = await awaitFirstValue(from: stream)
+		#expect(value == sample)
 	}
 
-		// MARK: - Error Tests
+	@Test("Flow error publisher emits errors")
+	func errorPublisherEmits() async {
+		let center = Flow.PublisherCenter.shared
+		let stream = center.errorPublisher()
 
-	@Test(
-		"Error is published",
-		.timeLimit(.seconds(2))
-	)
-	mutating func errorPublishing() async throws {
-		let testError = NSError(domain: "test", code: 1, userInfo: nil)
-		var receivedError: Error?
+		let nsError = NSError(domain: "io.outblock.flow.tests", code: 42, userInfo: nil)
+		center.publishError(nsError)
 
-		let expectation = AsyncExpectation<Void>()
-
-		Flow.Publisher.shared.errorPublisher
-			.sink { error in
-				receivedError = error
-				expectation.fulfill()
-			}
-			.store(in: &cancellables)
-
-		Flow.Publisher.shared.publishError(testError)
-
-		try await expectation.value
-		let nsError = receivedError as NSError?
-		#expect(nsError?.domain == testError.domain)
-		#expect(nsError?.code == testError.code)
+		let value = await awaitFirstValue(from: stream) as NSError?
+		#expect(value?.domain == nsError.domain)
+		#expect(value?.code == nsError.code)
 	}
 
-		// MARK: - Multiple Subscriber Tests
+	@Test("Flow connection publisher emits multiple values")
+	func connectionPublisherMultipleValues() async {
+		let center = Flow.PublisherCenter.shared
+		let stream = center.connectionPublisher()
 
-	@Test(
-		"Multiple subscribers receive connection status",
-		.timeLimit(.seconds(2))
-	)
-	mutating func multipleSubscribers() async throws {
-		let testStatus = true
-		var receivedStatus1: Bool?
-		var receivedStatus2: Bool?
+		center.publishConnectionStatus(isConnected: false)
+		center.publishConnectionStatus(isConnected: true)
 
-		let expectation1 = AsyncExpectation<Void>()
-		let expectation2 = AsyncExpectation<Void>()
+		var it = stream.makeAsyncIterator()
+		let first = await it.next()
+		let second = await it.next()
 
-			// First subscriber
-		Flow.Publisher.shared.connectionPublisher
-			.sink { status in
-				receivedStatus1 = status
-				expectation1.fulfill()
-			}
-			.store(in: &cancellables)
-
-			// Second subscriber
-		Flow.Publisher.shared.connectionPublisher
-			.sink { status in
-				receivedStatus2 = status
-				expectation2.fulfill()
-			}
-			.store(in: &cancellables)
-
-		Flow.Publisher.shared.publishConnectionStatus(isConnected: testStatus)
-
-		try await expectation1.value
-		try await expectation2.value
-
-		#expect(receivedStatus1 == testStatus)
-		#expect(receivedStatus2 == testStatus)
+		#expect(first == false)
+		#expect(second == true)
 	}
+
+
 }
