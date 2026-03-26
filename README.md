@@ -97,7 +97,7 @@ Add the package to `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/<your-org>/flow-swift.git", branch: "main")
+    .package(url: "https://github.com/13Ophiuchus/flow-swift-macos.git", branch: "main")
 ]
 ```
 
