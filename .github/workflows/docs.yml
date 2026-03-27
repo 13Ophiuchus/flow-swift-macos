@@ -30,7 +30,6 @@ jobs:
       - name: Generate docs
         run: Scripts/generate_docs.sh
 
-      # Optional: commit docs back to dev
       - name: Commit docs
         if: github.ref == 'refs/heads/dev'
         run: |
