@@ -11,7 +11,7 @@ on:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-15') || 'ubuntu-latest' }}
 
     permissions:
       security-events: write
@@ -23,15 +23,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Your Swift package
           - language: swift
             build-mode: manual
-
-          # Actions workflow YAML
           - language: actions
             build-mode: none
-
-          # Optional: Ruby (for Gemfile / Jazzy tooling)
           - language: ruby
             build-mode: none
 
@@ -39,26 +34,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ---------- Swift docs (runs only once, on Swift job) ----------
+      # ---------- Swift docs (runs only on Swift job) ----------
       - name: Generate Swift docs (swift-doc)
         if: matrix.language == 'swift'
-        uses: SwiftDocOrg/swift-doc@1.0.0-rc.1
+        uses: SwiftDocOrg/swift-doc@v1
         with:
-          # Adjust if your package name or module differ
-          package: .
-          format: html
-          output: docs-swiftdoc
+          module-name: Flow           # adjust if your module name differs
+          output-directory: docs-swiftdoc
+          # additional-arguments: "--base-url /flow-swift-macos"  # optional
 
       # ---------- Claude Code (AI review) ----------
-      # Requires ANTHROPIC_API_KEY secret if you enable it.
       - name: Claude Code Action Official
-        if: matrix.language == 'swift'
+        if: matrix.language == 'swift' && secrets.ANTHROPIC_API_KEY != ''
         uses: anthropics/claude-code-action@v1
         with:
-          # Example minimal config; adjust as you refine prompts:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # mode: "pr_review"  # uncomment if you want it only on PRs
 
       # ---------- Initialize CodeQL ----------
       - name: Initialize CodeQL
@@ -75,7 +66,7 @@ jobs:
           swift --version
           swift build -v
 
-      # ---------- Default manual step for other languages (kept as no-op) ----------
+      # ---------- No-op manual build for non-swift ----------
       - name: Run manual build steps (non-swift)
         if: matrix.language != 'swift' && matrix.build-mode == 'manual'
         shell: bash
