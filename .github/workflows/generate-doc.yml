@@ -34,10 +34,10 @@ jobs:
           bundle exec jazzy \
             --clean \
             --output .build/jazzy \
-            --author 'Outblock Team' \
-            --author_url https://github.com/outblock/flow-swift \
-            --github_url https://github.com/outblock/flow-swift \
-            --github-file-prefix https://github.com/outblock/flow-swift/tree/${RELEASE_VERSION} \
+            --author 'Resourceless \
+            --author_url https://github.com/13Ophiuchus/flow-swift-macos \
+            --github_url https://github.com/13Ophiuchus/flow-swift-macos \
+            --github-file-prefix https://github.com/13Ophiuchus/flow-swift-macos/tree/${RELEASE_VERSION} \
             --module-version ${RELEASE_VERSION} \
             --exclude 'Sources/Flow/Protobuf/*'
         working-directory: master
