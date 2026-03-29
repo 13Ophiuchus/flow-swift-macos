@@ -2,26 +2,29 @@ name: Build & Test
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main, dev ]
+    branches: [main, dev]
 
 jobs:
   build:
-    runs-on:  macos-26 
+    runs-on: macos-26
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Optional: pin a specific Xcode; adjust to what GitHub-hosted runners provide.
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Select Xcode 26.2
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+          xcodebuild -version
+          swift --version
 
-      - name: Show Swift version
-        run: swift --version
+      - name: Resolve dependencies
+        run: swift package resolve
 
       - name: Build
         run: swift build -v
 
       - name: Run tests
-        run: swift test --enable-swift-testing -v
+        run: swift test -v
