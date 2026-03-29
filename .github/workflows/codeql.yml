@@ -34,22 +34,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ---------- Swift docs (runs only on Swift job) ----------
-      - name: Generate Swift docs (swift-doc)
-        if: matrix.language == 'swift'
-        uses: SwiftDocOrg/swift-doc@v1
-        with:
-          module-name: Flow           # adjust if your module name differs
-          output-directory: docs-swiftdoc
-          # additional-arguments: "--base-url /flow-swift-macos"  # optional
-
-      # ---------- Claude Code (AI review) ----------
-      - name: Claude Code Action Official
-        if: matrix.language == 'swift' && secrets.ANTHROPIC_API_KEY != ''
-        uses: anthropics/claude-code-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    
+  
 
       # ---------- Initialize CodeQL ----------
       - name: Initialize CodeQL
