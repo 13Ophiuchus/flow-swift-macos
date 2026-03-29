@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+
 jobs:
   generate-doc:
     runs-on: macos-latest
@@ -30,16 +33,15 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
         run: |
-          bundle install
           bundle exec jazzy \
             --clean \
             --output .build/jazzy \
-            --author 'Resourceless \
-            --author_url https://github.com/13Ophiuchus/flow-swift-macos \
-            --github_url https://github.com/13Ophiuchus/flow-swift-macos \
-            --github-file-prefix https://github.com/13Ophiuchus/flow-swift-macos/tree/${RELEASE_VERSION} \
-            --module-version ${RELEASE_VERSION} \
-            --exclude 'Sources/Flow/Protobuf/*'
+            --author "Outblock Team" \
+            --author_url "https://github.com/outblock/flow-swift" \
+            --github_url "https://github.com/outblock/flow-swift" \
+            --github-file-prefix "https://github.com/outblock/flow-swift/tree/${RELEASE_VERSION}" \
+            --module-version "${RELEASE_VERSION}" \
+            --exclude "Sources/Flow/Protobuf/*"
         working-directory: master
 
       - name: Checkout gh-pages
@@ -56,10 +58,9 @@ jobs:
           cd gh-pages
           rm -rf docs/current
           mkdir -p docs/current
-          mkdir -p docs/$RELEASE_VERSION
+          mkdir -p "docs/${RELEASE_VERSION}"
           cp -R "${G_WORKSPACE}/master/.build/jazzy/"* docs/current
-          cp -R "${G_WORKSPACE}/master/.build/jazzy/"* docs/$RELEASE_VERSION
-
+          cp -R "${G_WORKSPACE}/master/.build/jazzy/"* "docs/${RELEASE_VERSION}"
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add docs
