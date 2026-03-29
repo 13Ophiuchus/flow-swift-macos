@@ -6,8 +6,6 @@
 	//  Reviewed for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 	//
 
-	// Sources/Cadence/ContractAddress.swift
-
 import Foundation
 
 	/// Contract Address Register manages the mapping of contract names to their addresses
@@ -54,3 +52,32 @@ public final class ContractAddressRegister {
 	}
 }
 
+/// Actor wrapper so import resolution can be used safely across tasks.
+public actor ContractAddressRegisterActor {
+
+	public static let shared = ContractAddressRegisterActor()
+
+	private let storage = ContractAddressRegister()
+
+	public init() {}
+
+	public func setAddress(
+		_ address: String,
+		for name: String,
+		on chainID: Flow.ChainID
+	) {
+		storage.setAddress(address, for: name, on: chainID)
+	}
+
+	public func address(for name: String, on chainID: Flow.ChainID) -> String? {
+		storage.address(for: name, on: chainID)
+	}
+
+	public func resolveImports(in script: String, for chainID: Flow.ChainID) -> String {
+		storage.resolveImports(in: script, for: chainID)
+	}
+
+	public func loadContractMap(fromPath path: String) throws {
+		try FlowAddressLoader.loadContractMap(fromPath: path, into: storage)
+	}
+}

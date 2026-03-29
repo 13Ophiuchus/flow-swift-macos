@@ -35,11 +35,11 @@ extension Flow {
 		let script = Flow.Script(data: data)
 
 			// Use the shared access client managed by your global actor.
-		let api = await FlowActors.access.currentClient()
+		let api = await FlowActors.access.currentClient
 
 		let response = try await api.executeScriptAtLatestBlock(
 			script: script,
-			arguments: target.arguments
+			arguments: target.arguments as! [Flow.Cadence.FValue] 
 		)
 
 		return try response.decode()

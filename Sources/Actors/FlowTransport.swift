@@ -24,6 +24,8 @@ import Foundation
 public extension Flow {
 
 		/// Endpoint / transport description for Flow access nodes.
+		///
+	
 	enum Transport: Equatable, Hashable, Sendable {
 		case HTTP(_ url: URL)
 		case gRPC(_ endpoint: Endpoint)

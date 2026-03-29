@@ -2,75 +2,83 @@
 	//  FlowWebSocketFrameHandler.swift
 	//  Flow
 	//
-	//  Created by Nicholas Reich on 3/21/26.
-	//
 
 import Foundation
 import NIOCore
 import NIOWebSocket
 
-	/// Handles inbound websocket frames and routes decoded messages into FlowWebSocketCenter.
-final class FlowWebSocketFrameHandler: ChannelInboundHandler, Sendable {
-	typealias InboundIn = WebSocketFrame
-	typealias OutboundOut = WebSocketFrame
+	/// Low-level NIO handler that decodes websocket frames from the Flow access node.
+	///
+	/// Decoded envelopes are delivered two ways:
+	///   1. Via `onEnvelope` — routes into FlowWebSocketCenter's shared AsyncStream
+	///      so callers of `subscribeToTransactionStatus` receive typed responses.
+	///   2. Via Flow.shared.publisher — preserves existing high-level event fan-out.
+final class FlowWebSocketFrameHandler: ChannelInboundHandler, @unchecked Sendable {
 
-	private let decoder: JSONDecoder = {
-		let d = JSONDecoder()
-		d.keyDecodingStrategy = .convertFromSnakeCase
-		return d
-	}()
+	typealias InboundIn = WebSocketFrame
+
+		/// Injected by FlowNIOWebSocketClient; feeds FlowWebSocketCenter's envelope bus.
+	private let onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?
+
+	init(onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)? = nil) {
+		self.onEnvelope = onEnvelope
+	}
 
 	func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-		let frame = unwrapInboundIn(data)
+		let frame = self.unwrapInboundIn(data)
 
-		switch frame.opcode {
-			case .text:
-				handleTextFrame(frame)
-			case .binary:
-				handleBinaryFrame(frame)
-			case .connectionClose:
-				context.close(promise: nil)
-			case .ping:
-					// buffer is never mutated, so make it a constant
-				let buffer = context.channel.allocator.buffer(capacity: 0)
-				let pongFrame = WebSocketFrame(fin: true, opcode: .pong, data: buffer)
-				context.writeAndFlush(wrapOutboundOut(pongFrame), promise: nil)
-			default:
-				break
-		}
-	}
-
-	private func handleTextFrame(_ frame: WebSocketFrame) {
-		var buffer = frame.unmaskedData
-		if let string = buffer.readString(length: buffer.readableBytes),
-		   let bytes = string.data(using: .utf8) {
-			handleJSONData(bytes)
-		}
-	}
-
-	private func handleBinaryFrame(_ frame: WebSocketFrame) {
-		var buffer = frame.unmaskedData
-		let bytes = buffer.readBytes(length: buffer.readableBytes) ?? []
-		handleJSONData(Data(bytes))
-	}
-
-	private func handleJSONData(_  data: Data) {
-			// Transaction status topic
-		if let response = try? decoder.decode(
-			Flow.WebSocketTopicResponse<Flow.WSTransactionResponse>.self,
-			from: data
-		) {
-			_Concurrency.Task {
-				await FlowWebSocketCenter.shared.handleTransactionStatusMessage(response)
-			}
+		guard frame.opcode == .text else {
+			context.fireChannelRead(data)
 			return
 		}
 
-			// Additional topic types can be added here later.
+		var buffer = frame.unmaskedData
+		guard let bytes = buffer.readBytes(length: buffer.readableBytes) else {
+			context.fireChannelRead(data)
+			return
+		}
+
+		do {
+			let envelope = try JSONDecoder().decode(Flow.WebSocketEnvelope.self, from: Data(bytes))
+
+				// 1. Feed the AsyncStream bus so subscription streams receive it.
+			onEnvelope?(envelope)
+
+				// 2. Also publish high-level events via Flow.Publisher (existing behaviour).
+			handleEnvelope(envelope, context: context)
+		} catch {
+			context.fireErrorCaught(error)
+		}
 	}
 
 	func errorCaught(context: ChannelHandlerContext, error: Error) {
+		_Concurrency.Task {
+			await Flow.shared.publisher.publishError(error)
+		}
 		context.close(promise: nil)
 	}
-}
 
+		// MARK: - Private
+
+	private func handleEnvelope(
+		_ envelope: Flow.WebSocketEnvelope,
+		context: ChannelHandlerContext
+	) {
+		guard envelope.topic == .transactionStatuses,
+			  let payload = envelope.transactionStatusPayload else {
+			return
+		}
+
+		do {
+			let result = try payload.asTransactionResult()
+			_Concurrency.Task {
+				await Flow.shared.publisher.publishTransactionStatus(
+					id: result.blockId,
+					status: result
+				)
+			}
+		} catch {
+			context.fireErrorCaught(error)
+		}
+	}
+}

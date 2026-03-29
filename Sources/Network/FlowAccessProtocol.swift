@@ -38,13 +38,15 @@ import Foundation
 	/// - gRPC client
 	/// - Mock client for testing
 public protocol FlowAccessProtocol: Sendable {
-		/// Check node connectivity
+	
 		/// - Returns: True if node is accessible
 	func ping() async throws -> Bool
 
 		/// Get latest block header
 		/// - Returns: Most recent block header
-	func getLatestBlockHeader(blockStatus: Flow.BlockStatus) async throws -> Flow.BlockHeader
+	func getLatestBlockHeader(
+		blockStatus: Flow.BlockStatus
+	) async throws -> Flow.BlockHeader
 
 		/// Get block header by ID
 		/// - Parameter id: Block identifier
@@ -83,34 +85,16 @@ public protocol FlowAccessProtocol: Sendable {
 		blockStatus: Flow.BlockStatus
 	) async throws -> Flow.ScriptResponse
 
-	func executeScriptAtLatestBlock(
-		script: Flow.Script,
-		arguments: [Flow.Cadence.FValue],
-		blockStatus: Flow.BlockStatus
-	) async throws -> Flow.ScriptResponse
-
 	func executeScriptAtBlockId(
 		script: Flow.Script,
 		blockId: Flow.ID,
 		arguments: [Flow.Argument]
 	) async throws -> Flow.ScriptResponse
 
-	func executeScriptAtBlockId(
-		script: Flow.Script,
-		blockId: Flow.ID,
-		arguments: [Flow.Cadence.FValue]
-	) async throws -> Flow.ScriptResponse
-
 	func executeScriptAtBlockHeight(
 		script: Flow.Script,
 		height: UInt64,
 		arguments: [Flow.Argument]
-	) async throws -> Flow.ScriptResponse
-
-	func executeScriptAtBlockHeight(
-		script: Flow.Script,
-		height: UInt64,
-		arguments: [Flow.Cadence.FValue]
 	) async throws -> Flow.ScriptResponse
 
 	func getEventsForHeightRange(
@@ -128,19 +112,11 @@ public protocol FlowAccessProtocol: Sendable {
 		// func getLatestProtocolStateSnapshot() async throws -> Flow.Snapshot
 }
 
-public extension FlowAccessProtocol {
-	func getLatestBlockHeader(
-	blockStatus: Flow.BlockStatus = .final
-	) async throws -> Flow.BlockHeader {
-		try await getLatestBlockHeader(blockStatus: blockStatus)
-	}
+// MARK: - Convenience overloads (no recursion)
 
-	func getAccountAtLatestBlock(
-		address: Flow.Address,
-		blockStatus: Flow.BlockStatus = .final
-	) async throws -> Flow.Account {
-		try await getAccountAtLatestBlock(address: address, blockStatus: blockStatus)
-	}
+public extension FlowAccessProtocol {
+
+		// Accounts
 
 	func getAccountAtLatestBlock(
 		address: String,
@@ -151,6 +127,8 @@ public extension FlowAccessProtocol {
 			blockStatus: blockStatus
 		)
 	}
+
+		// Transactions
 
 	func getTransactionById(id: String) async throws -> Flow.Transaction {
 		try await getTransactionById(id: .init(hex: id))
@@ -164,6 +142,8 @@ public extension FlowAccessProtocol {
 			// kept for backwards compatibility; `sealed` ignored, maps to `.final`
 		try await getLatestBlock(blockStatus: .final)
 	}
+
+		// Scripts at latest block
 
 	func executeScriptAtLatestBlock(
 		cadence: String,
@@ -184,31 +164,7 @@ public extension FlowAccessProtocol {
 	) async throws -> Flow.ScriptResponse {
 		try await executeScriptAtLatestBlock(
 			script: .init(text: cadence),
-			arguments: arguments,
-			blockStatus: blockStatus
-		)
-	}
-
-	func executeScriptAtLatestBlock(
-		script: Flow.Script,
-		blockStatus: Flow.BlockStatus = .final
-	) async throws -> Flow.ScriptResponse {
-		let list: [Flow.Argument] = []
-		return try await executeScriptAtLatestBlock(
-			script: script,
-			arguments: list,
-			blockStatus: blockStatus
-		)
-	}
-
-	func executeScriptAtLatestBlock(
-		script: Flow.Script,
-		arguments: [Flow.Argument],
-		blockStatus: Flow.BlockStatus = .final
-	) async throws -> Flow.ScriptResponse {
-		try await executeScriptAtLatestBlock(
-			script: script,
-			arguments: arguments,
+			arguments: arguments.map { $0.toArgument() },
 			blockStatus: blockStatus
 		)
 	}
@@ -225,17 +181,7 @@ public extension FlowAccessProtocol {
 		)
 	}
 
-	func executeScriptAtBlockId(
-		script: Flow.Script,
-		blockId: Flow.ID,
-		arguments: [Flow.Argument] = []
-	) async throws -> Flow.ScriptResponse {
-		try await executeScriptAtBlockId(
-			script: script,
-			blockId: blockId,
-			arguments: arguments
-		)
-	}
+		// Scripts at block ID
 
 	func executeScriptAtBlockId(
 		script: Flow.Script,
@@ -249,17 +195,7 @@ public extension FlowAccessProtocol {
 		)
 	}
 
-	func executeScriptAtBlockHeight(
-		script: Flow.Script,
-		height: UInt64,
-		arguments: [Flow.Argument] = []
-	) async throws -> Flow.ScriptResponse {
-		try await executeScriptAtBlockHeight(
-			script: script,
-			height: height,
-			arguments: arguments
-		)
-	}
+		// Scripts at block height
 
 	func executeScriptAtBlockHeight(
 		script: Flow.Script,
@@ -273,3 +209,4 @@ public extension FlowAccessProtocol {
 		)
 	}
 }
+

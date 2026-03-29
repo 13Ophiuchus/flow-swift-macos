@@ -18,7 +18,6 @@
 	//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 	//  See the License for the specific language governing permissions and
 	//  limitations under the License.
-	//
 	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 
 import Foundation
@@ -47,5 +46,3 @@ public extension FlowEntity {
 		bytes.hexValue
 	}
 }
-
-

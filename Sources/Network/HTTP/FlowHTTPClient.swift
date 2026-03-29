@@ -25,7 +25,7 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 		/// Decode helper with Flow's JSON settings and 400-error mapping.
 		/// - Throws: Decoding errors or API errors.
 	public static func decode<T: Decodable>(
-		_ data: Data,
+		_  data: Data,
 		response: URLResponse? = nil
 	) throws -> T {
 		let dateFormatter = DateFormatter()
@@ -47,12 +47,12 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 	}
 
 		/// Low-level HTTP request wrapper.
-	private func request<T: Decodable, U: TargetType>(_ target: U) async throws -> T {
+	@FlowActor private func request<T: Decodable, U: TargetType>(_ target: U) async throws -> T {
 		await FlowLogger.shared
 			.log(.debug, message: "Starting request to: \(target.path)")
 
 		guard
-			let baseURL = chainID.defaultHTTPNode.url,
+			let baseURL = await chainID.defaultHTTPNode.url,
 			var urlComponents = URLComponents(string: baseURL.absoluteString),
 			case let .requestParameters(parameters, body: body) = target.task
 		else {
@@ -90,7 +90,10 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 			let data = try encoder.encode(AnyEncodable(bodyObject))
 			request.httpBody = data
 			request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-			request.setValue(Flow.shared.defaultUserAgent, forHTTPHeaderField: "User-Agent")
+			request.setValue(
+				Flow.shared.defaultUserAgent,
+				forHTTPHeaderField: "User-Agent"
+			)
 		}
 
 		if let headers = target.headers {
@@ -227,7 +230,7 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 
 	public func getAccountAtLatestBlock(
 		address: Flow.Address,
-		blockStatus: Flow.BlockStatus = .final
+		blockStatus: Flow.BlockStatus
 	) async throws -> Flow.Account {
 		try await request(
 			Flow.AccessEndpoint.getAccountAtLatestBlock(
@@ -246,13 +249,15 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 		)
 	}
 
-	public func executeScriptAtLatestBlock(
+public func executeScriptAtLatestBlock(
 		script: Flow.Script,
 		arguments: [Flow.Argument],
 		blockStatus: Flow.BlockStatus
 	) async throws -> Flow.ScriptResponse {
-		let resolvedScript = FlowActor.shared.flow.addressRegister
-			.resolveImports(in: script.text, for: chainID)
+		let resolvedScript = await Flow.shared.addressRegisterStorage.resolveImports(
+			in: script.text,
+			for: chainID
+		)
 		return try await request(
 			Flow.AccessEndpoint.executeScriptAtLatestBlock(
 				script: .init(text: resolvedScript),
@@ -267,8 +272,10 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 		blockId: Flow.ID,
 		arguments: [Flow.Argument]
 	) async throws -> Flow.ScriptResponse {
-		let resolvedScript = FlowActor.shared.flow.addressRegister
-			.resolveImports(in: script.text, for: chainID)
+		let resolvedScript = await Flow.shared.addressRegisterStorage.resolveImports(
+			in: script.text,
+			for: chainID
+		)
 		return try await request(
 			Flow.AccessEndpoint.executeScriptAtBlockId(
 				script: .init(text: resolvedScript),
@@ -277,14 +284,16 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 			)
 		)
 	}
-
+	
 	public func executeScriptAtBlockHeight(
 		script: Flow.Script,
 		height: UInt64,
 		arguments: [Flow.Argument]
 	) async throws -> Flow.ScriptResponse {
-		let resolvedScript = FlowActor.shared.flow.addressRegister
-			.resolveImports(in: script.text, for: chainID)
+		let resolvedScript = await Flow.shared.addressRegisterStorage.resolveImports(
+			in: script.text,
+			for: chainID
+		)
 		return try await request(
 			Flow.AccessEndpoint.executeScriptAtBlockHeight(
 				script: .init(text: resolvedScript),

@@ -9,13 +9,14 @@ import Foundation
 
 	/// Global actor used to isolate high-level Flow façade APIs.
 @globalActor
-public actor FlowActor {
-	public static let shared = FlowActor()
+struct FlowActor {
+	static let shared = FlowActorImpl()
+}
 
-	public let flow: Flow
-
-		/// Default to Flow.shared but allow injection for tests.
-	public init(flow: Flow = .shared) {
-		self.flow = flow
+actor FlowActorImpl {
+	func run<R>(_ operation: @Sendable @escaping () async throws -> R) async rethrows -> R {
+		try await operation()
 	}
 }
+
+

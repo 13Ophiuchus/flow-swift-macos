@@ -40,7 +40,7 @@ public extension Flow {
 		///     - unsignedTransaction: The transaction to be signed
 		///     - signers: A list of `FlowSigner` to sign the transaction
 		/// - returns: The signed transaction
-	func signTransaction(unsignedTransaction: Flow.Transaction, signers: [FlowSigner]) async throws -> Flow.Transaction {
+	@FlowActor func signTransaction(unsignedTransaction: Flow.Transaction, signers: [FlowSigner]) async throws -> Flow.Transaction {
 		var tx = unsignedTransaction
 		return try await tx.sign(signers: signers)
 	}

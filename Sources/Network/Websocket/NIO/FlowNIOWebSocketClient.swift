@@ -13,21 +13,51 @@ import NIOWebSocket
 public enum FlowWebSocketUpgradeEvent {
 	case upgraded
 }
+
 	/// NIO-based websocket client for Flow transaction status and topics.
 public final class FlowNIOWebSocketClient: @unchecked Sendable {
 
 		// MARK: - State
 
+	public let addresses: [Flow.Address]
+	private let accountService: FlowAccountService
+
 	private let group: EventLoopGroup
 	private var channel: Channel?
 	private let configActor: FlowConfigActor
 
-	public init(
+		/// Called on every successfully decoded inbound envelope.
+		/// Wired by FlowWebSocketCenter into its shared AsyncStream.
+	private let onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?
+
+		// Load from JSON path by default
+	public convenience init(
+		addressesJSONPath: String,
 		group: EventLoopGroup? = nil,
-		configActor: FlowConfigActor = .shared
+		configActor: FlowConfigActor = .shared,
+		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)? = nil
+	) throws {
+		let loaded = try FlowAddressLoader.loadAddressList(fromPath: addressesJSONPath)
+		self.init(
+			addresses: loaded,
+			group: group,
+			configActor: configActor,
+			onEnvelope: onEnvelope
+		)
+	}
+
+	public init(
+		addresses: [Flow.Address],
+		group: EventLoopGroup? = nil,
+		configActor: FlowConfigActor = .shared,
+		accountService: FlowAccountService = FlowAccountService(),
+		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)? = nil
 	) {
+		self.addresses = addresses
+		self.accountService = accountService
 		self.group = group ?? MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
 		self.configActor = configActor
+		self.onEnvelope = onEnvelope
 	}
 
 	deinit {
@@ -41,12 +71,20 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 			return
 		}
 
-		let chainID =  await configActor.chainID
+		let chainID = await configActor.chainID
 		guard let endpoint = chainID.defaultWebSocketNode, let url = endpoint.url else {
 			throw Flow.FError.customError(msg: "No websocket endpoint for chainID \(chainID)")
 		}
 
 		channel = try await connectWebSocket(to: url)
+
+		_Concurrency.Task { [addresses, accountService] in
+			do {
+				_ = try await accountService.loadAccounts(addresses, maxConcurrent: 4)
+			} catch {
+					// Log or ignore
+			}
+		}
 	}
 
 	public func disconnect() async {
@@ -91,7 +129,17 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 		var buffer = channel.allocator.buffer(capacity: data.count)
 		buffer.writeBytes(data)
 
-		let frame = WebSocketFrame(fin: true, opcode: .text,  data: buffer)
+		let frame = WebSocketFrame(
+			fin: true,
+			rsv1: false,
+			rsv2: false,
+			rsv3: false,
+			opcode: .text,
+			maskKey: nil,
+			data: buffer,
+			extensionData: nil
+		)
+
 		try await channel.writeAndFlush(frame)
 	}
 
@@ -114,27 +162,23 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 		}
 
 		let promise = group.next().makePromise(of: Channel.self)
+		let deliver = self.onEnvelope  // capture before entering bootstrap closure
 
 		let bootstrap = ClientBootstrap(group: group)
 			.channelInitializer { channel in
-					// This closure runs on the channel's EventLoop.
 				if let context = sslContext {
 					do {
 						let sslHandler = try NIOSSLClientHandler(
 							context: context,
 							serverHostname: host
 						)
-
-							// IMPORTANT: use syncOperations so NIOSSLHandler does NOT
-							// have to be Sendable.
 						try channel.pipeline.syncOperations.addHandler(sslHandler)
 					} catch {
 						return channel.eventLoop.makeFailedFuture(error)
 					}
 				}
 
-					// Everything after this can be Sendable-safe (HTTP + WebSocket).
-				return Self.addHTTPAndWebSocketHandlers(to: channel)
+				return Self.addHTTPAndWebSocketHandlers(to: channel, onEnvelope: deliver)
 			}
 
 		bootstrap.connect(host: host, port: port).whenComplete { result in
@@ -173,25 +217,21 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 		return try await promise.futureResult.get()
 	}
 
-
-
-
-	private static func addHTTPAndWebSocketHandlers(to channel: Channel) -> EventLoopFuture<Void> {
+	private static func addHTTPAndWebSocketHandlers(
+		to channel: Channel,
+		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?
+	) -> EventLoopFuture<Void> {
 		let websocketUpgrader = NIOWebSocketClientUpgrader(
 			maxFrameSize: 1 << 24,
 			automaticErrorHandling: true
 		) { channel, _ in
-			channel.pipeline.addHandler(FlowWebSocketFrameHandler())
+			channel.pipeline.addHandler(FlowWebSocketFrameHandler(onEnvelope: onEnvelope))
 		}
 
-			// Sendable-friendly upgrade configuration: (upgraders, completionHandler)
 		let upgradeConfig: NIOHTTPClientUpgradeSendableConfiguration = (
 			upgraders: [websocketUpgrader],
 			completionHandler: { context in
-					// Notify the rest of the pipeline / your app that the WebSocket is ready
 				context.fireUserInboundEventTriggered(FlowWebSocketUpgradeEvent.upgraded)
-
-					// Ensure reading continues even if autoRead was turned off
 				context.channel.read()
 			}
 		)

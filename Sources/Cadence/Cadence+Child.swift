@@ -1,10 +1,11 @@
-//
-//  File.swift
-//  Flow
-//
-//  Created by Hao Fu on 1/4/2025.
-//
-//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+	//
+	//  Cadence+Child.swift
+	//  Flow
+	//
+	//  Created by Hao Fu on 1/4/2025.
+	//
+	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+
 import SwiftUI
 
 extension CadenceLoader.Category {
@@ -16,7 +17,7 @@ extension CadenceLoader.Category {
 	}
 }
 
-	// Metadata structure for child accounts
+// Metadata structure for child accounts
 extension CadenceLoader.Category.Child {
 	public struct Metadata: Codable {
 		public let name: String?
@@ -38,22 +39,21 @@ extension CadenceLoader.Category.Child {
 	}
 }
 
-	// Swift 6 async extensions with MainActor safety
+// Swift 6 async extensions; keep them on FlowActor to avoid cross‑actor captures.
+
 public extension Flow {
-		/// Fetch child account addresses with Swift 6 concurrency
-	@MainActor
+	/// Fetch child account addresses
 	func getChildAddress(address: Flow.Address) async throws -> [Flow.Address] {
 		let script = try await CadenceLoader.load(
-			CadenceLoader.Category.Child.getChildAddress
+		CadenceLoader.Category.Child.getChildAddress
 		)
 		return try await executeScriptAtLatestBlock(
-			script: .init(text: script),
-			arguments: [.address(address)]
-		).decode()
+		script: .init(text: script),
+		arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+			).decode()
 	}
 
-		/// Fetch child account metadata concurrently
-	@MainActor
+		/// Fetch child account metadata
 	func getChildMetadata(
 		address: Flow.Address
 	) async throws -> [String: CadenceLoader.Category.Child.Metadata] {
@@ -62,36 +62,7 @@ public extension Flow {
 		)
 		return try await executeScriptAtLatestBlock(
 			script: .init(text: script),
-			arguments: [.address(address)]
+			arguments: [Flow.Cadence.FValue.address(address).toArgument()]
 		).decode()
 	}
 }
-//@MainActor
-//class ChildAccountManager {
-//	private let flow: Flow
-//
-//	init(flow: Flow) {
-//		self.flow = flow
-//	}
-//
-//		/// Fetch all child account info concurrently
-//	func loadAllChildren(for parentAddress: Flow.Address) async throws -> [ChildAccountInfo] {
-//			// Concurrent fetch of addresses and metadata
-//		async let addresses = flow.getChildAddress(address: parentAddress)
-//		async let metadata = flow.getChildMetadata(address: parentAddress)
-//
-//		let (childAddrs, childMetadata) = try await (addresses, metadata)
-//
-//		return childAddrs.map { address in
-//			ChildAccountInfo(
-//				address: address,
-//				metadata: childMetadata[address.description] ?? nil
-//			)
-//		}
-//	}
-//
-//	struct ChildAccountInfo {
-//		let address: Flow.Address
-//		let metadata: CadenceLoader.Category.Child.Metadata?
-//	}
-//}

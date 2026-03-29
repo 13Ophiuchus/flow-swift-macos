@@ -30,13 +30,13 @@ public extension Flow {
 		/// and exposes AsyncStream-based APIs.
 	actor Websocket {
 
-			// MARK: State (facade)
+			// MARK: State
 
 		private var isConnected = false
 
 		public init() {}
 
-			// MARK: - Connection (delegates to FlowWebSocketCenter / NIO)
+			// MARK: - Connection
 
 		public func connect(to url: URL) {
 			_Concurrency.Task { [weak self] in
@@ -58,40 +58,36 @@ public extension Flow {
 			}
 		}
 
-			// MARK: - Transaction status subscription via FlowWebSocketCenter
+			// MARK: - Transaction status subscription
 
-			/// Async stream of raw topic responses for a given transaction ID.
-			/// Also fan-outs high-level events via `Flow.Publisher`.
+			/// Returns an AsyncThrowingStream of raw topic responses for a given
+			/// transaction ID. The stream is backed by FlowWebSocketCenter's shared
+			/// envelope bus, filtered to this tx ID only.
 		public func subscribeToTransactionStatus(
 			txId: Flow.ID
-		) async throws -> AsyncThrowingStream<TopicResponse<Flow.WSTransactionResponse>, Error> {
-			let upstream = try await FlowWebSocketCenter.shared
-				.transactionStatusStream(for: txId)
+		) async throws -> AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error> {
+				// subscribeToTransactionStatus now sends the subscribe frame AND
+				// returns a properly typed AsyncThrowingStream — no intermediate
+				// `()` assignment needed.
+			let stream = try await FlowWebSocketCenter.shared.subscribeToTransactionStatus(id: txId)
 
+				// Wrap so we can also publish high-level events as each response arrives.
 			return AsyncThrowingStream { continuation in
-				_Concurrency.Task { [weak self] in
-					guard let self else { return }
+				_Concurrency.Task {
 					do {
-						for try await event in upstream {
-							guard let payload = event.payload else { continue }
+						for try await response in stream {
+							guard let payload = response.payload else { continue }
 
 							let txResult = try payload.asTransactionResult()
 
-								// Publish high-level transaction status via Flow.Publisher
 							await Flow.shared.publisher.publishTransactionStatus(
 								id: txId,
 								status: txResult
 							)
 
-								// Forward the raw topic response for low-level consumers
-							continuation.yield(
-								TopicResponse(
-									subscriptionId: event.subscriptionId,
-									payload: payload
-								)
-							)
+								// Pass response directly — no rewrap needed, types already match.
+							continuation.yield(response)
 						}
-
 						continuation.finish()
 					} catch {
 						await self.sendError(error)
@@ -105,8 +101,8 @@ public extension Flow {
 		@FlowWebsocketActor
 		public static func subscribeToManyTransactionStatuses(
 			txIds: [Flow.ID]
-		) async throws -> [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.WSTransactionResponse>, Error>] {
-			var result: [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.WSTransactionResponse>, Error>] = [:]
+		) async throws -> [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] {
+			var result: [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] = [:]
 
 			for id in txIds {
 				let stream = try await FlowWebsocketActor.shared.websocket
@@ -121,16 +117,28 @@ public extension Flow {
 
 		private func setConnected(_ status: Bool) async {
 			isConnected = status
-			await Flow.shared.publisher.publishConnectionStatus(isConnected: status)
+			await Flow.publishConnectionStatus(isConnected: status)
 		}
 
 		private func sendError(_ error: Error) async {
-			await Flow.shared.publisher.publishError(error)
+			await Flow.publishError(error)
 		}
 	}
 }
 
-// MARK: - Models (unchanged public API surface)
+public extension Flow {
+	@FlowActor
+	static func publishConnectionStatus(isConnected: Bool) async {
+		await Flow.shared.publisher.publishConnectionStatus(isConnected: isConnected)
+	}
+
+	@FlowActor
+	static func publishError(_ error: Error) async {
+		await Flow.shared.publisher.publishError(error)
+	}
+}
+
+// MARK: - Models
 
 public extension Flow {
 	struct Topic: RawRepresentable, Sendable {
@@ -145,7 +153,7 @@ public extension Flow {
 		}
 	}
 
-	struct TopicResponse<T: Decodable & Sendable>: Decodable, Sendable{
+	struct TopicResponse<T: Decodable & Sendable>: Decodable, Sendable {
 		public let subscriptionId: String
 		public let payload: T?
 	}

@@ -5,13 +5,12 @@
 
 import Foundation
 
-@FlowActor
 public enum FCLFlow {
 
 	public static func buildTransaction(
 		chainID: Flow.ChainID? = nil,
 		skipEmptyCheck: Bool = false,
-		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
+		@Flow.TransactionBuild.TransactionBuilder builder: @Sendable () -> [Flow.TransactionBuild]
 	) async throws -> Flow.Transaction {
 		let resolvedChainID: Flow.ChainID
 		if let chainID {
@@ -30,7 +29,7 @@ public enum FCLFlow {
 	public static func send(
 		chainID: Flow.ChainID? = nil,
 		signers: [FlowSigner],
-		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
+		@Flow.TransactionBuild.TransactionBuilder builder: @Sendable () -> [Flow.TransactionBuild]
 	) async throws -> Flow.ID {
 		let resolvedChainID: Flow.ChainID
 		if let chainID {

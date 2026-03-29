@@ -10,17 +10,16 @@
 //  FlowConfigActor.swift
 //
 
-import Foundation
+	// FlowConfigActor.swift
 
-/// Actor owning Flow configuration (chainID, endpoints, QoS).
 public actor FlowConfigActor: Sendable {
-    public static let shared = FlowConfigActor()
+	public static let shared = FlowConfigActor()
 
-    public private(set) var chainID: Flow.ChainID = .mainnet
+	public private(set) var chainID: Flow.ChainID = .mainnet
 
-    public init() {}
+	public init() {}
 
-    public func updateChainID(_ newValue: Flow.ChainID) {
-        chainID = newValue
-    }
+	public func updateChainID(_ newValue: Flow.ChainID) {
+		chainID = newValue
+	}
 }

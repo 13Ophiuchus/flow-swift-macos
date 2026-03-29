@@ -138,7 +138,7 @@ public extension Flow {
 		)
 
 			// Start with an empty script.
-		var script = Flow.Script(data: Data())
+		var script = Flow.Script( data: Data())
 		var args: [Flow.Argument] = []
 		var auths: [Flow.Address] = []
 		var payer: Flow.Address?
@@ -151,8 +151,11 @@ public extension Flow {
 		for txValue in components {
 			switch txValue {
 				case let .script(value):
-						// Resolve imports for the current chain.
-					let updated = self.addressRegister.resolveImports(in: value.text, for: chainID)
+						// Resolve imports for the current chain via helper on Flow.
+					let updated = Flow.shared.addressRegisterStorage.resolveImports(
+						in: value.text,
+						for: chainID
+					)
 					script = Flow.Script(text: updated)
 
 					if let scriptString = String(data: value.data, encoding: .utf8) {
@@ -224,17 +227,18 @@ public extension Flow {
 			throw Flow.FError.emptyProposer
 		}
 
-		let api = await FlowActors.access.currentClient()
+			// Build a fresh HTTP client for the current chain rather than using a shared one.
+		let httpAPI = FlowHTTPAPI(chainID: chainID) as FlowAccessProtocol
 
 		await FlowLogger.shared.logAsync(.debug, message: "Resolving reference block ID")
-		let id = try await resolveBlockId(api: api, refBlock: refBlock)
+		let id = try await resolveBlockId(api: httpAPI, refBlock: refBlock)
 		await FlowLogger.shared.logAsync(.debug, message: "Resolved block ID: \(id.hex)")
 
 		await FlowLogger.shared.logAsync(
 			.debug,
 			message: "Resolving proposal key: address=\(proposalKey.address.hex), keyIndex=\(proposalKey.keyIndex)"
 		)
-		let key = try await resolveProposalKey(api: api, proposalKey: proposalKey)
+		let key = try await resolveProposalKey(api: httpAPI, proposalKey: proposalKey)
 		await FlowLogger.shared.logAsync(
 			.debug,
 			message: "Resolved proposal key with sequence number: \(key.sequenceNumber)"
@@ -278,12 +282,12 @@ public extension Flow {
 		return transaction
 	}
 
-		/// Convenience overload: uses current Flow.chainID.
+		/// Convenience overload: uses current chainID from config actor.
 	func buildTransaction(
 		skipEmptyCheck: Bool = false,
 		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
 	) async throws -> Flow.Transaction {
-		let currentChainID = await self.chainID
+		let currentChainID = await FlowActors.config.chainID
 		return try await buildTransaction(
 			chainID: currentChainID,
 			skipEmptyCheck: skipEmptyCheck,
@@ -301,7 +305,10 @@ public extension Flow {
 		limit: BigUInt = BigUInt(9999),
 		blockID: Flow.ID? = nil
 	) async throws -> Flow.Transaction {
-		let updatedScript = self.addressRegister.resolveImports(in: script, for: chainID)
+		let updatedScript = Flow.shared.addressRegisterStorage.resolveImports(
+			in: script,
+			for: chainID
+		)
 		return try await buildTransaction(chainID: chainID) {
 			cadence { updatedScript }
 			arguments { agrument }
@@ -322,7 +329,7 @@ public extension Flow {
 		limit: BigUInt = BigUInt(9999),
 		blockID: Flow.ID? = nil
 	) async throws -> Flow.Transaction {
-		let currentChainID = await self.chainID
+		let currentChainID = await FlowActors.config.chainID
 		return try await buildTransaction(
 			chainID: currentChainID,
 			script: script,
@@ -339,35 +346,40 @@ public extension Flow {
 		chainID: Flow.ChainID,
 		signedTransaction: Flow.Transaction
 	) async throws -> Flow.ID {
-		let api = await FlowActors.access.currentClient()
+		let api = FlowHTTPAPI(chainID: chainID) as FlowAccessProtocol
 		return try await api.sendTransaction(transaction: signedTransaction)
 	}
 
 	func sendTransaction(
 		signedTransaction: Flow.Transaction
 	) async throws -> Flow.ID {
-		try await sendTransaction(chainID: self.chainID, signedTransaction: signedTransaction)
+		let currentChainID = await FlowActors.config.chainID
+		return try await sendTransaction(chainID: currentChainID, signedTransaction: signedTransaction)
 	}
-
 	func sendTransaction(
 		chainID: Flow.ChainID,
 		signers: [FlowSigner],
 		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
 	) async throws -> Flow.ID {
-		let api = await FlowActors.access.currentClient()
+		let api = await FlowActors.access.currentClient
 		let unsignedTx = try await buildTransaction(chainID: chainID, builder: builder)
-		let signedTx = try await self.signTransaction(
+
+			// This is fine: both methods are FlowActor‑isolated.
+		let signedTx = try await signTransaction(
 			unsignedTransaction: unsignedTx,
 			signers: signers
 		)
+
 		return try await api.sendTransaction(transaction: signedTx)
 	}
+
 
 	func sendTransaction(
 		signers: [FlowSigner],
 		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
 	) async throws -> Flow.ID {
-		try await sendTransaction(chainID: self.chainID, signers: signers, builder: builder)
+		let currentChainID = await FlowActors.config.chainID
+		return try await sendTransaction(chainID: currentChainID, signers: signers, builder: builder)
 	}
 }
 
@@ -403,7 +415,9 @@ private func resolveProposalKey(
 			.debug,
 			message: "Fetching sequence number for account: \(proposalKey.address.hex)"
 		)
-		let account = try await api.getAccountAtLatestBlock(address: proposalKey.address)
+		let account = try await api.getAccountAtLatestBlock(
+			address: proposalKey.address.hex
+		)
 
 		guard let accountKey = account.keys[safe: proposalKey.keyIndex] else {
 			await FlowLogger.shared.logAsync(

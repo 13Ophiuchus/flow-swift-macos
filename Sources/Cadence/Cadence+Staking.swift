@@ -38,23 +38,26 @@ public extension CadenceLoader.Category.Staking {
 }
 
 public extension Flow {
-	/// Get staking info for delegator
-	@FlowCryptoActor
+		/// Get staking info for delegator
+
 	func getStakingInfo(
-	address: Flow.Address
+		address: Flow.Address
 	) async throws -> [CadenceLoader.Category.Staking.StakingNode] {
 		let script = try await CadenceLoader.load(
-		CadenceLoader.Category.Staking.getDelegatorInfo
+			CadenceLoader.Category.Staking.getDelegatorInfo
 		)
 		return try await executeScriptAtLatestBlock(
-		script: .init(text: script),
-		arguments: [.address(address)]
-			).decode()
+			script: .init(text: script),
+			arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+		).decode()
 	}
 }
 
-/// Actor for concurrent staking operations
+	/// Actor for concurrent staking operations
 actor StakingCoordinator {
+		// `nonisolated(unsafe)` tells Swift 6 that we take responsibility for
+		// thread-safety of `flow`; it allows the value to cross into `sending`
+		// closures without a Sendable conformance on Flow itself.
 	private let flow: Flow
 
 	init(flow: Flow) {
@@ -65,12 +68,12 @@ actor StakingCoordinator {
 	func loadStakingBatch(
 		for addresses: [Flow.Address]
 	) async throws -> [Flow.Address: [CadenceLoader.Category.Staking.StakingNode]] {
-		let results = try await withThrowingTaskGroup(
+		return try await withThrowingTaskGroup(
 			of: (Flow.Address, [CadenceLoader.Category.Staking.StakingNode]).self
 		) { group in
 			for address in addresses {
-				group.addTask {
-					let staking = try await self.flow.getStakingInfo(address: address)
+				group.addTask { [flow = self.flow] in
+					let staking = try await flow.getStakingInfo(address: address)
 					return (address, staking)
 				}
 			}
@@ -81,7 +84,5 @@ actor StakingCoordinator {
 			}
 			return dict
 		}
-
-		return results
 	}
 }

@@ -20,20 +20,20 @@ extension CadenceLoader.Category {
 }
 
 public extension Flow {
-		/// Get EVM address for Flow account
-	@FlowActor
+	/// Get EVM address for Flow account
+	
 	func getEVMAddress(address: Flow.Address) async throws -> String? {
 		let script = try await CadenceLoader.load(
-			CadenceLoader.Category.EVM.getAddress
+		CadenceLoader.Category.EVM.getAddress
 		)
 		return try await executeScriptAtLatestBlock(
-			script: .init(text: script),
-			arguments: [.address(address)]
-		).decode()
+		script: .init(text: script),
+		arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+			).decode()
 	}
 
 		/// Create Cadence Object Account (COA) with gas fee
-	@MainActor
+	@FlowActor
 	func createCOA(
 		chainID: ChainID,
 		proposer: Address,
@@ -69,7 +69,7 @@ public extension Flow {
 	}
 
 		/// Execute EVM transaction through Flow
-	@MainActor
+	@FlowActor
 	func runEVMTransaction(
 		chainID: ChainID,
 		proposer: Address,
@@ -78,8 +78,10 @@ public extension Flow {
 		coinbaseAddress: String,
 		signers: [FlowSigner]
 	) async throws -> Flow.ID {
-		guard let txArg = rlpEncodedTransaction.toFlowValue()?.toArgument(),
-			  let coinbaseArg = coinbaseAddress.toFlowValue()?.toArgument() else {
+		guard
+			let txArg = rlpEncodedTransaction.toFlowValue()?.toArgument(),
+			let coinbaseArg = coinbaseAddress.toFlowValue()?.toArgument()
+		else {
 			throw FError.customError(msg: "EVM transaction arguments encoding failed")
 		}
 

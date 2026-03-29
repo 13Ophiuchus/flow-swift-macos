@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "0BCD1B22-E183-48E2-81D0-103F3A5E4DED",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "FlowTests",
+        "name" : "FlowTests"
+      }
+    }
+  ],
+  "version" : 1
+}

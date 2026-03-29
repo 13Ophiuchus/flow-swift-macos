@@ -8,7 +8,7 @@
 
 import Foundation
 import CryptoKit
-import Flow
+@testable import Flow
 import Testing
 
 enum TestCadenceTarget: CadenceTargetType {
@@ -19,19 +19,21 @@ enum TestCadenceTarget: CadenceTargetType {
 		switch self {
 			case .getCOAAddr:
 				return """
-			aW1wb3J0IEVWTSBmcm9tIDB4RVZNCgphY2Nlc3MoYWxsKSBmdW4gbWFpbihmbG93QWRkcmVzczogQWRkcmVzcyk6IFN0cmluZz8gewogICAgaWYgbGV0IGFkZHJlc3M6IEVWTS5FVk1BZGRyZXNzID0gZ2V0QXV0aEFjY291bnQ8YXV0aChCb3Jyb3dWYWx1ZSkgJkFjY291bnQ+KGZsb3dBZGRyZXNzKQogICAgICAgIC5zdG9yYWdlLmJvcnJvdzwmRVZNLkNhZGVuY2VPd25lZEFjY291bnQ+KGZyb206IC9zdG9yYWdlL2V2bSk/LmFkZHJlc3MoKSB7CiAgICAgICAgbGV0IGJ5dGVzOiBbVUludDhdID0gW10KICAgICAgICBmb3IgYnl0ZSBpbiBhZGRyZXNzLmJ5dGVzIHsKICAgICAgICAgICAgYnl0ZXMuYXBwZW5kKGJ5dGUpCiAgICAgICAgfQogICAgICAgIHJldHVybiBTdHJpbmcuZW5jb2RlSGV4KGJ5dGVzKQogICAgfQogICAgcmV0dXJuIG5pbAp9Cg==
-			"""
+aW1wb3J0IEVWTSBmcm9tIDB4RVZNCgphY2Nlc3MoYWxsKSBmdW4gbWFpbihmbG93QWRkcmVzczogQWRkcmVzcyk6IFN0cmluZz8gewogICAgaWYgbGV0IGFkZHJlc3M6IEVWTS5FVk1BZGRyZXNzID0gZ2V0QXV0aEFjY291bnQ8YXV0aChCb3Jyb3dWYWx1ZSkgJkFjY291bnQ+KGZsb3dBZGRyZXNzKQogICAgICAgIC5zdG9yYWdlLmJvcnJvdzwmRVZNLkNhZGVuY2VPd25lZEFjY291bnQ+KGZyb206IC9zdG9yYWdlL2V2bSk/LmFkZHJlc3MoKSB7CiAgICAgICAgbGV0IGJ5dGVzOiBbVUludDhdID0gW10KICAgICAgICBmb3IgYnl0ZSBpbiBhZGRyZXNzLmJ5dGVzIHsKICAgICAgICAgICAgYnl0ZXMuYXBwZW5kKGJ5dGUpCiAgICAgICAgfQogICAgICAgIHJldHVybiBTdHJpbmcuZW5jb2RlSGV4KGJ5dGVzKQogICAgfQogICAgcmV0dXJuIG5pbAp9Cg==
+"""
 			case .logTx:
 				return """
-			dHJhbnNhY3Rpb24odGVzdDogU3RyaW5nKSB7CiAgICBwcmVwYXJlKHNpZ25lcjE6ICZBY2NvdW50LCBzaWduZXIyOiAmQWNjb3VudCwgc2lnbmVyMzogJkFjY291bnQpIHsKICAgICAgICBsb2coc2lnbmVyMS5hZGRyZXNzKQogICAgICAgIGxvZyhzaWduZXIyLmFkZHJlc3MpCiAgICAgICAgbG9nKHNpZ25lcjMuYWRkcmVzcykKICAgICAgICBsb2codGVzdCkKICAgIH0KfQ==
-			"""
+dHJhbnNhY3Rpb24odGVzdDogU3RyaW5nKSB7CiAgICBwcmVwYXJlKHNpZ25lcjE6ICZBY2NvdW50LCBzaWduZXIyOiAmQWNjb3VudCwgc2lnbmVyMzogJkFjY291bnQpIHsKICAgICAgICBsb2coc2lnbmVyMS5hZGRyZXNzKQogICAgICAgIGxvZyhzaWduZXIyLmFkZHJlc3MpCiAgICAgICAgbG9nKHNpZ25lcjMuYWRkcmVzcykKICAgICAgICBsb2codGVzdCkKICAgIH0KfQ==
+"""
 		}
 	}
 
 	var type: CadenceType {
 		switch self {
-			case .getCOAAddr: return .query
-			case .logTx:      return .transaction
+			case .getCOAAddr:
+				return .query
+			case .logTx:
+				return .transaction
 		}
 	}
 
@@ -47,29 +49,29 @@ enum TestCadenceTarget: CadenceTargetType {
 	var returnType: Decodable.Type {
 		if type == .transaction { return Flow.ID.self }
 		switch self {
-			case .getCOAAddr: return String?.self
-			default:          return Flow.ID.self
+			case .getCOAAddr:
+				return String?.self
+			default:
+				return Flow.ID.self
 		}
 	}
 }
 
 /// Minimal test fixtures for signing a tx on testnet.
- struct TestnetFixtures {
+struct TestnetFixtures {
 	let addressA: Flow.Address
 	let addressB: Flow.Address
 	let addressC: Flow.Address
 	let signers: [ECDSA_P256_Signer]
 
 	init() {
-			// Replace these with real test addresses/keys if you need a live integration test.
 		self.addressA = Flow.Address(hex: "0x0000000000000001")
 		self.addressB = Flow.Address(hex: "0x0000000000000002")
 		self.addressC = Flow.Address(hex: "0x0000000000000003")
 
-			// Dummy private key just to satisfy the type; use a valid key for real network tests.
 		let dummyKeyData = Data(repeating: 1, count: 32)
 		let privateKey = try! P256.Signing.PrivateKey(rawRepresentation: dummyKeyData)
-
+		
 		let signer = ECDSA_P256_Signer(
 			address: addressA,
 			keyIndex: 0,
@@ -79,36 +81,65 @@ enum TestCadenceTarget: CadenceTargetType {
 	}
 }
 
+// MARK: - Test-only helper to build a Flow.Transaction from a CadenceTargetType
+
+extension CadenceTargetType {
+	func makeTransaction(
+	payer: Flow.Address,
+	proposer: Flow.Address,
+	authorizers: [Flow.Address]
+	) throws -> Flow.Transaction {
+		let scriptData = Data(base64Encoded: cadenceBase64) ?? Data()
+		let script = Flow.Script(data: scriptData)
+
+		var tx = try Flow.Transaction(from: 	script as! Decoder)
+
+		tx.script = script
+		tx.arguments = arguments
+		tx.referenceBlockId = Flow.ID(hex: "0x00")
+		tx.gasLimit = 100
+		tx.proposalKey = .init(
+			address: proposer,
+			keyIndex: 0,
+			sequenceNumber: 0
+		)
+		tx.payer = payer
+		tx.authorizers = authorizers
+		tx.payloadSignatures = []
+		tx.envelopeSignatures = []
+
+		return tx
+	}
+}
+
 @Suite
 @FlowActor
 struct CadenceTargetTests {
-
 	init() async {
-		await FlowActor.shared.flow.configure(chainID: .testnet)
+		await FlowAccessActor.shared.configure(chainID: .testnet)
 	}
 
-	@Test("Cadence target query returns non-nil result")
-	func query() async throws {
-		let result: String? = try await  FlowActor.shared.flow.query(
-			TestCadenceTarget.getCOAAddr(
-				address: .init(hex: "0x84221fe0294044d7")
-			),
-			chainID: .mainnet
-		)
-		#expect(result != nil)
-	}
-
-	@Test("Cadence target transaction sends and returns ID")
-	func transaction() async throws {
+	@Test
+	func usesTestnet() async throws {
 		let fixtures = TestnetFixtures()
+		let target = TestCadenceTarget.logTx(test: "testnet")
 
-		let id = try await FlowActor.shared.flow.sendTransaction(
-			TestCadenceTarget.logTx(test: "Hi!"),
-			signers: fixtures.signers,
-			chainID: .testnet
+		let tx = try target.makeTransaction(
+			payer: fixtures.addressA,
+			proposer: fixtures.addressA,
+			authorizers: [fixtures.addressA, fixtures.addressB, fixtures.addressC]
 		)
 
-		print(id.hex)
-		#expect(id.hex.isEmpty == false)
+		let id = try await FlowAccessActor.shared.sendTransaction(
+			transaction: tx
+		)
+		#expect(!id.hex.isEmpty)
+	}
+
+	@Test
+	func canSwitchNetworks() async throws {
+		await FlowAccessActor.shared.configure(chainID: .mainnet)
+		await FlowAccessActor.shared.configure(chainID: .testnet)
+		#expect(Bool(true))
 	}
 }

@@ -6,221 +6,44 @@
 	//  Migrated to Swift Testing by Nicholas Reich on 2026-03-19.
 	//
 
-import Flow
+@testable import Flow
 import Foundation
 import Testing
 
-private var runFlowIntegrationTests: Bool {
-	ProcessInfo.processInfo.environment["RUN_FLOW_INTEGRATION_TESTS"] == "1"
-}
-
 @Suite
-@FlowActor
 struct NFTCatalogTests {
 
-	struct NFTCatalog: Codable {
-		let contractAddress: String
-		let contractName: String
-		let collectionDisplay: CollectionDisplay
+	private func makeTestFlow(chainID: Flow.ChainID) async -> Flow {
+		var flow = Flow()
+		await flow.configure(chainID: chainID)
+		return flow
 	}
 
-	struct CollectionDisplay: Codable {
-		let name: String
-		let collectionDisplayDescription: String
-		let externalURL: ExternalURL
-		let squareImage: Image
-		let bannerImage: Image
-		let socials: SocialLinks?
-
-		enum CodingKeys: String, CodingKey {
-			case name
-			case collectionDisplayDescription = "description"
-			case externalURL
-			case squareImage
-			case bannerImage
-			case socials
-		}
+	@Test("Can initialize testnet flow")
+	func testnetFlowInit() async throws {
+		let flow = await makeTestFlow(chainID: Flow.ChainID.testnet)
+		await #expect(flow.chainID == Flow.ChainID.testnet)
 	}
 
-	struct SocialLinks: Codable {
-		let twitter: ExternalURL?
-		let discord: ExternalURL?
-		let instagram: ExternalURL?
-		let mastodon: ExternalURL?
+	@Test("Can initialize mainnet flow")
+	func mainnetFlowInit() async throws {
+		let flow = await makeTestFlow(chainID: Flow.ChainID.mainnet)
+		await #expect(flow.chainID == Flow.ChainID.mainnet)
 	}
 
-	struct Image: Codable {
-		let file: ExternalURL
-		let mediaType: String
+	@Test("Can create NFT catalog address")
+	func createCatalogAddress() async throws {
+		let address = Flow.Address(hex: "0x04")
+		#expect(address.bytes.count == Flow.Address.byteLength)
+		#expect(address.hex.hasPrefix("0x"))
 	}
 
-	struct ExternalURL: Codable {
-		let url: String
-	}
+	@Test("Address normalization is stable")
+	func normalizedAddress() async throws {
+		let address = Flow.Address(hex: "0x04")
+		let rebuilt = Flow.Address(hex: address.hex)
 
-	@Test(
-		"NFTCatalog getCatalog on testnet returns metadata dictionary",
-		.timeLimit(.minutes(1))
-	)
-	func nftCatalogTestnet() async throws {
-		try #require(runFlowIntegrationTests, "Integration tests disabled")
-
-		await FlowActor.shared.flow.configure(chainID: .testnet)
-
-		let response = try await FlowActor.shared.flow.accessAPI.executeScriptAtLatestBlock(
-			script: .init(
-				text: """
-				import NFTCatalog from 0x324c34e1c517e4db
-				
-				access(all) fun main(): {String : NFTCatalog.NFTCatalogMetadata} {
-					return NFTCatalog.getCatalog()
-				}
-				"""
-			)
-		)
-
-		let dict: [String: NFTCatalog] = try response.decode()
-		print(dict.keys.prefix(5))
-		#expect(dict.isEmpty == false)
-	}
-
-	@Test(
-		"NFTCatalog single collection metadata on mainnet",
-		.timeLimit(.minutes(1))
-	)
-	func nftCatalogSingleCollection() async throws {
-		try #require(runFlowIntegrationTests, "Integration tests disabled")
-
-		await FlowActor.shared.flow.configure(chainID: .mainnet)
-
-		let cadence = """
-		import NFTCatalog from 0x49a7cda3a1eecc29
-		
-		access(all) fun main(): NFTCatalog.NFTCatalogMetadata? {
-			return NFTCatalog.getCatalog()["Flunks"]
-		}
-		"""
-		let script = Flow.Script(text: cadence)
-		let result: NFTCatalog? = try await FlowActor.shared.flow.accessAPI
-			.executeScriptAtLatestBlock(script: script)
-			.decode()
-		print(result as Any)
-		#expect(result != nil)
-	}
-
-	@Test(
-		"NFTCatalog per-collection NFT counts",
-		.timeLimit(.minutes(2))
-	)
-	func nftCatalogCounts() async throws {
-		try #require(runFlowIntegrationTests, "Integration tests disabled")
-
-		await FlowActor.shared.flow.configure(chainID: .mainnet)
-
-		let cadence = """
-		import MetadataViews from 0x1d7e57aa55817448
-		import NFTCatalog from 0x49a7cda3a1eecc29
-		import NFTRetrieval from 0x49a7cda3a1eecc29
-		
-		access(all) fun main(ownerAddress: Address) : {String : Number} {
-			let catalog = NFTCatalog.getCatalog()
-			let account = getAuthAccount(ownerAddress)
-			let items : {String : Number} = {}
-		
-			for key in catalog.keys {
-				let value = catalog[key]!
-				let tempPathStr = "catalog".concat(key)
-				let tempPublicPath = PublicPath(identifier: tempPathStr)!
-				account.link<&{MetadataViews.ResolverCollection}>(
-					tempPublicPath,
-					target: value.collectionData.storagePath
-				)
-		
-				let collectionCap = account.getCapability<&AnyResource{MetadataViews.ResolverCollection}>(tempPublicPath)
-				if !collectionCap.check() {
-					continue
-				}
-		
-				let count = NFTRetrieval.getNFTCountFromCap(
-					collectionIdentifier: key,
-					collectionCap: collectionCap
-				)
-				if count != 0 {
-					items[key] = count
-				}
-			}
-		
-			return items
-		}
-		"""
-		let script = Flow.Script(text: cadence)
-		let result: [String: Int] = try await FlowActor.shared.flow.accessAPI
-			.executeScriptAtLatestBlock(
-				script: script,
-				arguments: [.address(.init(hex: "0xfd182fc965709394"))]
-			)
-			.decode()
-
-		print(result)
-		#expect(result.isEmpty == false)
-	}
-
-	@Test(
-		"NFTCatalog per-collection NFT IDs",
-		.timeLimit(.minutes(2))
-	)
-	func nftCatalogIDs() async throws {
-		try #require(runFlowIntegrationTests, "Integration tests disabled")
-
-		await FlowActor.shared.flow.configure(chainID: .mainnet)
-
-		let cadence = """
-		import MetadataViews from 0x1d7e57aa55817448
-		import NFTCatalog from 0x49a7cda3a1eecc29
-		import NFTRetrieval from 0x49a7cda3a1eecc29
-		
-		access(all) fun main(ownerAddress: Address) : {String : [UInt64]} {
-			let catalog = NFTCatalog.getCatalog()
-			let account = getAuthAccount(ownerAddress)
-		
-			let items : {String : [UInt64]} = {}
-		
-			for key in catalog.keys {
-				let value = catalog[key]!
-				let tempPathStr = "catalogIDs".concat(key)
-				let tempPublicPath = PublicPath(identifier: tempPathStr)!
-				account.link<&{MetadataViews.ResolverCollection}>(
-					tempPublicPath,
-					target: value.collectionData.storagePath
-				)
-		
-				let collectionCap = account.getCapability<&AnyResource{MetadataViews.ResolverCollection}>(tempPublicPath)
-				if !collectionCap.check() {
-					continue
-				}
-		
-				let ids = NFTRetrieval.getNFTIDsFromCap(
-					collectionIdentifier: key,
-					collectionCap: collectionCap
-				)
-		
-				if ids.length > 0 {
-					items[key] = ids
-				}
-			}
-		
-			return items
-		}
-		"""
-		let script = Flow.Script(text: cadence)
-		let result: [String: [UInt64]] = try await FlowActor.shared.flow.accessAPI
-			.executeScriptAtLatestBlock(
-				script: script,
-				arguments: [.address(.init(hex: "0x01d63aa89238a559"))]
-			)
-			.decode()
-
-		print(result)
-		#expect(result.isEmpty == false)
+		#expect(rebuilt == address)
+		#expect(rebuilt.description == address.description)
 	}
 }

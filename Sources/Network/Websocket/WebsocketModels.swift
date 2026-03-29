@@ -10,6 +10,8 @@ import Foundation
 
 public extension Flow {
 
+		// MARK: - Topics & actions
+
 		/// High-level websocket topics used by the Flow access node.
 	enum WebSocketTopic: String, Codable, Sendable {
 		case blockDigests = "block_digests"
@@ -27,6 +29,8 @@ public extension Flow {
 		case unsubscribe = "unsubscribe"
 		case listSubscriptions = "list_subscriptions"
 	}
+
+		// MARK: - Subscribe / topic responses
 
 		/// Generic subscribe request for Flow websocket.
 	struct WebSocketSubscribeRequest<Arguments: Encodable & Sendable>: Encodable, Sendable {
@@ -74,5 +78,56 @@ public extension Flow {
 		public let topic: WebSocketTopic
 		public let payload: T?
 		public let error: WebSocketSocketError?
+	}
+
+		// MARK: - Transaction status envelope
+
+		/// Generic Flow websocket envelope specifically for transaction status messages.
+	struct WebSocketEnvelope: Decodable, Sendable {
+		public let id: String?
+		public let topic: WebSocketTopic
+		public let payload: TransactionStatusBody?
+
+		enum CodingKeys: String, CodingKey {
+			case id
+			case topic
+			case payload
+		}
+
+		public var transactionStatusPayload: TransactionStatusBody? {
+			payload
+		}
+	}
+
+		/// Transaction status payload body from websocket.
+	struct TransactionStatusBody: Decodable, Sendable {
+		public let txId: String
+		public let status: Flow.Transaction.Status
+		public let errorMessage: String?
+		public let events: [Flow.Event.Result]?
+		public let blockId: Flow.ID?
+		public let computationUsed: Int?
+
+		public func asTransactionResult() throws -> Flow.TransactionResult {
+				// Flatten [Flow.Event.Result] -> [Flow.Event]
+			let evs: [Flow.Event] = (events ?? []).flatMap { $0.events }
+
+			let statusCode = status.rawValue   // or your own mapping
+
+
+			guard let blockId = blockId, let errorMessage = errorMessage, let computationUsed = computationUsed else {
+				throw Flow.FError.invaildResponse
+			}
+
+			return Flow.TransactionResult(
+				status: status,
+				errorMessage: errorMessage,
+				events: evs,
+				statusCode: statusCode,
+				blockId: blockId,
+				computationUsed: computationUsed.description
+			)
+		}
+
 	}
 }

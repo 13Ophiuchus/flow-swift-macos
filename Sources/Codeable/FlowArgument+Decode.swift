@@ -1,23 +1,10 @@
 	//
 	//  FlowArgument-Decode.swift
-	//
 	//  CadenceTypeTest
 	//
-	//  Copyright 2022 Outblock Pty Ltd
-	//
-	//  Licensed under the Apache License, Version 2.0 (the "License");
-	//  you may not use this file except in compliance with the License.
-	//  You may obtain a copy of the License at
-	//
-	//    http://www.apache.org/licenses/LICENSE-2.0
-	//
-	//  Unless required by applicable law or agreed to in writing, software
-	//  distributed under the License is distributed on an "AS IS" BASIS,
-	//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	//  See the License for the specific language governing permissions and
-	//  limitations under the License.
-	//
 	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+	//
+
 import BigInt
 import Foundation
 
@@ -29,6 +16,9 @@ protocol FlowDecodable {
 	func decode<T>() throws -> T where T: Decodable
 }
 
+// NOTE: This conformance and all decode methods are plain, non-isolated.
+// They do not depend on FlowActor or Flow.shared, so they can be used
+// synchronously from any context.
 extension Flow.Argument: FlowDecodable {
 
 		// Generic decode to a Decodable type
@@ -57,7 +47,6 @@ extension Flow.Argument: FlowDecodable {
 		}
 	}
 
-		// Convenience overload with explicit type parameter
 	public func decode<T>(_ decodable: T.Type) throws -> T where T: Decodable {
 		try decode()
 	}
@@ -213,7 +202,7 @@ extension Flow.Argument: FlowDecodable {
 	}
 }
 
-	// MARK: - Helpers
+// MARK: - Helpers
 
 private func eventToDict(result: Flow.Argument.Event) -> [String: Any?] {
 	result.fields.reduce(into: [String: Any?]()) {
@@ -223,8 +212,8 @@ private func eventToDict(result: Flow.Argument.Event) -> [String: Any?] {
 
 private func modelToDict<T: Encodable>(result: T) -> [String: Any]? {
 	guard
-		let data = try? FlowActor.shared.flow.encoder.encode(result),
-		let model = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+		let data = try? JSONEncoder().encode(result),
+			let model = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
 	else {
 		return nil
 	}

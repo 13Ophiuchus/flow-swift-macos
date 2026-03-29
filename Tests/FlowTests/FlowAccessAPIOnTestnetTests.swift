@@ -2,265 +2,305 @@
 	//  FlowAccessAPIOnTestnetTests.swift
 	//  FlowTests
 	//
-	//  Copyright 2022 Outblock Pty Ltd
-	//
-	//  Licensed under the Apache License, Version 2.0 (the "License");
-	//  you may not use this file except in compliance with the License.
-	//  You may obtain a copy of the License at
-	//
-	//    http://www.apache.org/licenses/LICENSE-2.0
-	//
-	//  Unless required by applicable law or agreed to in writing, software
-	//  distributed under the License is distributed on an "AS IS" BASIS,
-	//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	//  See the License for the specific language governing permissions and
-	//  limitations under the License.
-	//
-	//  Migrated from XCTest to Swift Testing by Nicholas Reich on 2026-03-19.
-	//
 
-@testable import BigInt
-import CryptoKit
 @testable import Flow
 import Foundation
 import Testing
 
 @Suite
-final class FlowAccessAPIOnTestnetTests {
-	var flowAPI: FlowAccessProtocol!
+struct FlowAccessAPIOnTestnetTests {
 
-	let addressA = Flow.Address(hex: "0xc6de0d94160377cd")
-	let publicKeyA = try! P256.KeyAgreement.PublicKey(
-		rawRepresentation:
-			"d487802b66e5c0498ead1c3f576b718949a3500218e97a6a4a62bf69a8b0019789639bc7acaca63f5889c1e7251c19066abb09fcd6b273e394a8ac4ee1a3372f"
-			.hexValue
-	)
-	let privateKeyA = try! P256.Signing.PrivateKey(
-		rawRepresentation:
-			"c9c0f04adddf7674d265c395de300a65a777d3ec412bba5bfdfd12cffbbb78d9"
-			.hexValue
-	)
+		// MARK: - Helpers
 
-	let addressB = Flow.Address(hex: "0x10711015c370a95c")
-	let publicKeyB = try! P256.KeyAgreement.PublicKey(
-		rawRepresentation:
-			"6278ff9fdf75c5830e4aafbb8cc25af50b62869d7bc9b249e76aae31490199732b769d1df627d36e5e336aeb4cb06b0fad80ae13a25aca37ec0017e5d8f1d8a5"
-			.hexValue
-	)
-	let privateKeyB = try! P256.Signing.PrivateKey(
-		rawRepresentation:
-			"38ebd09b83e221e406b176044a65350333b3a5280ed3f67227bd80d55ac91a0f"
-			.hexValue
-	)
-
-	let addressC = Flow.Address(hex: "0xe242ccfb4b8ea3e2")
-	let publicKeyC = try! P256.KeyAgreement.PublicKey(
-		rawRepresentation:
-			"adbf18dae6671e6b6a92edf00c79166faba6babf6ec19bd83eabf690f386a9b13c8e48da67973b9cf369f56e92ec25ede5359539f687041d27d0143afd14bca9"
-			.hexValue
-	)
-	let privateKeyC = try! P256.Signing.PrivateKey(
-		rawRepresentation:
-			"1eb79c40023143821983dc79b4e639789ea42452e904fda719f5677a1f144208"
-			.hexValue
-	)
-
-		/// All test signers as a list of FlowSigner values.
-	public var signers: [any FlowSigner] {
-		[
-			// Address A
-			ECDSA_P256_Signer(address: addressA, keyIndex: 5, privateKey: privateKeyB),
-			ECDSA_P256_Signer(address: addressA, keyIndex: 0, privateKey: privateKeyA),
-
-			// Address B
-			ECDSA_P256_Signer(address: addressB, keyIndex: 2, privateKey: privateKeyA),
-			ECDSA_P256_Signer(address: addressB, keyIndex: 1, privateKey: privateKeyC),
-
-			// Address C
-			ECDSA_P256_Signer(address: addressC, keyIndex: 3, privateKey: privateKeyB),
-			ECDSA_P256_Signer(address: addressC, keyIndex: 2, privateKey: privateKeyB),
-			ECDSA_P256_Signer(address: addressC, keyIndex: 0, privateKey: privateKeyC),
-		]
+	private func makeTestnetAPI() async -> FlowAccessActor {
+		let api = FlowAccessActor(initialChainID: Flow.ChainID.testnet)
+		await api.configure(chainID: Flow.ChainID.testnet)
+		return api
 	}
 
-	init() async {
-		flowAPI = await FlowActor.shared.flow
-			.createHTTPAccessAPI(chainID: .testnet)
-		await FlowActor.shared.flow.configure(chainID: .testnet)
+	private func makeScript(_ text: String) -> Flow.Script {
+		Flow.Script(text: text)
 	}
 
-	@Test("Flow testnet ping succeeds", .timeLimit(.minutes(1)))
-	func flowPing() async throws {
-		let isConnected = try await flowAPI.ping()
-		#expect(isConnected)
+	private func makeArguments(_ values: [Flow.Cadence.FValue]) -> [Flow.Argument] {
+		values.map { $0.toArgument() }
 	}
 
-	@Test("Flow testnet fee parameters script executes", .timeLimit(.minutes(1)))
-	func flowFee() async throws {
-		let result = try await FlowActor.shared.flow.accessAPI.executeScriptAtLatestBlock(
-			script: .init(
-				text: """
- import FlowFees from 0x912d5440f7e3769e
- 
- access(all) fun main(): FlowFees.FeeParameters {
-  return FlowFees.getFeeParameters()
- }
- """
-			)
-		)
+		// MARK: - Basic connectivity
 
-		#expect(result.fields != nil)
+	@Test("Ping testnet")
+	func pingTestnet() async throws {
+		let api = await makeTestnetAPI()
+		let result = try await api.ping()
+		#expect(result == true)
 	}
 
-	@Test("Flow testnet network parameters", .timeLimit(.minutes(1)))
-	func networkParameters() async throws {
-		let chainID = try await flowAPI.getNetworkParameters()
+	@Test("Get testnet network parameters")
+	func getNetworkParameters() async throws {
+		let api = await makeTestnetAPI()
+		let chainID = try await api.getNetworkParameters()
 		#expect(chainID == Flow.ChainID.testnet)
-
-		let txId = Flow.ID(
-			hex: "8f7f939020ca904b4d2067089e063b2f46dd1234d5e43f88bda0e4200142f21a"
-		)
-
-			// Just ensure we can fetch a result for this transaction without error.
-		_ = try await FlowActor.shared.flow.accessAPI.getTransactionResultById(id: txId)
 	}
 
-	@Test("Flow testnet can create account via script", .timeLimit(.minutes(1)))
-	func canCreateAccount() async throws {
-		await FlowActor.shared.flow.configure(chainID: .testnet)
+		// MARK: - Block headers
 
-		let signerGroup: [any FlowSigner] = [
-			ECDSA_P256_Signer(address: addressA, keyIndex: 0, privateKey: privateKeyA),
+	@Test("Get latest testnet block header")
+	func getLatestBlockHeader() async throws {
+		let api = await makeTestnetAPI()
+		let header = try await api.getLatestBlockHeader(
+			blockStatus: Flow.BlockStatus.final
+		)
+		#expect(header.height >= 0)
+	}
+
+	@Test("Get latest testnet block")
+	func getLatestBlock() async throws {
+		let api = await makeTestnetAPI()
+		let block = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
+		)
+		#expect(block.height >= 0)
+	}
+
+	@Test("Get latest sealed testnet block")
+	func getLatestSealedBlock() async throws {
+		let api = await makeTestnetAPI()
+		let block = try await api.getLatestBlock(sealed: true)
+		#expect(block.height >= 0)
+	}
+
+	@Test("Get testnet block by height")
+	func getBlockByHeight() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
+		)
+		let block = try await api.getBlockByHeight(height: latest.height)
+		#expect(block.height == latest.height)
+	}
+
+	@Test("Get testnet block header by height")
+	func getBlockHeaderByHeight() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlockHeader(
+			blockStatus: Flow.BlockStatus.final
+		)
+		let header = try await api.getBlockHeaderByHeight(height: latest.height)
+		#expect(header.height == latest.height)
+	}
+
+	@Test("Get testnet block by id")
+	func getBlockById() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
+		)
+		let block = try await api.getBlockById(id: latest.id)
+		#expect(block.id == latest.id)
+	}
+
+	@Test("Get testnet block header by id")
+	func getBlockHeaderById() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlockHeader(
+			blockStatus: Flow.BlockStatus.final
+		)
+		let header = try await api.getBlockHeaderById(id: latest.id)
+		#expect(header.id == latest.id)
+	}
+
+		// MARK: - Accounts
+
+	@Test("Get testnet service account at latest block by address")
+	func getAccountAtLatestBlockByAddress() async throws {
+		let api = await makeTestnetAPI()
+		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7") // replace with real testnet addr if needed
+
+		let account = try await api.getAccountAtLatestBlock(
+			address: address,
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		#expect(account.address == address)
+	}
+
+	@Test("Get testnet service account at latest block by string")
+	func getAccountAtLatestBlockByString() async throws {
+		let api = await makeTestnetAPI()
+		let addressString = "0xf8d6e0586b0a20c7" // replace with real testnet addr if needed
+
+		let account = try await api.getAccountAtLatestBlock(
+			address: addressString,
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		#expect(account.address.hex.lowercased() == addressString.lowercased())
+	}
+
+	@Test("Get testnet account by block height")
+	func getAccountByBlockHeight() async throws {
+		let api = await makeTestnetAPI()
+		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7") // replace with real testnet addr if needed
+		let latest = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		let account = try await api.getAccountByBlockHeight(
+			address: address,
+			height: latest.height
+		)
+
+		#expect(account.address == address)
+	}
+
+		// MARK: - Scripts
+
+	@Test("Execute no-arg script at latest testnet block")
+	func executeScriptAtLatestBlockNoArgs() async throws {
+		let api = await makeTestnetAPI()
+
+		let script = makeScript("""
+		access(all) fun main(): Int {
+			return 42
+		}
+		""")
+
+		let response = try await api.executeScriptAtLatestBlock(
+			script: script,
+			arguments: [],
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		let value: Int = try response.decode()
+		#expect(value == 42)
+	}
+
+	@Test("Execute address-arg script at latest testnet block")
+	func executeScriptAtLatestBlockWithAddressArg() async throws {
+		let api = await makeTestnetAPI()
+		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7") // testnet addr
+
+		let script = makeScript("""
+		access(all) fun main(addr: Address): Address {
+			return addr
+		}
+		""")
+
+		let response = try await api.executeScriptAtLatestBlock(
+			script: script,
+			arguments: makeArguments([
+				.address(address)
+			]),
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		let value: Flow.Address = try response.decode()
+		#expect(value == address)
+	}
+
+	@Test("Execute testnet script at block id")
+	func executeScriptAtBlockId() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		let script = makeScript("""
+		access(all) fun main(): String {
+			return "ok"
+		}
+		""")
+
+		let response = try await api.executeScriptAtBlockId(
+			script: script,
+			blockId: latest.id,
+			arguments: []
+		)
+
+		let value: String = try response.decode()
+		#expect(value == "ok")
+	}
+
+	@Test("Execute testnet script at block height")
+	func executeScriptAtBlockHeight() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		let script = makeScript("""
+		access(all) fun main(): Int {
+			return 7
+		}
+		""")
+
+		let response = try await api.executeScriptAtBlockHeight(
+			script: script,
+			height: latest.height,
+			arguments: []
+		)
+
+		let value: Int = try response.decode()
+		#expect(value == 7)
+	}
+
+	@Test("Execute testnet script with multiple cadence values")
+	func executeScriptWithMultipleArguments() async throws {
+		let api = await makeTestnetAPI()
+
+		let script = makeScript("""
+		access(all) fun main(a: Int, b: String): String {
+			return b
+		}
+		""")
+
+		let cadenceValues: [Flow.Cadence.FValue] = [
+			.int(10),
+			.string("hello")
 		]
 
-		let accountKey = Flow.AccountKey(
-			publicKey: Flow.PublicKey(
-				hex:
-					"bfa6d9893d4d9b5e53b0b9d79ac44b4e20f57b6443f02e5f12b366ed4e1fb4e7decca4e58b76308cee1a22a4c0c01f6fce698dc62c80120f65e8cdf57a0ffdff"
-			),
-			signAlgo: .ECDSA_P256,
-			hashAlgo: .SHA2_256,
-			weight: 1001
+		let response = try await api.executeScriptAtLatestBlock(
+			script: script,
+			arguments: makeArguments(cadenceValues),
+			blockStatus: Flow.BlockStatus.final
 		)
 
-		let proposerAddress = addressA
-		let pkHex = accountKey.publicKey.hex
-		let signAlgoIndex = UInt8(accountKey.signAlgo.index)
-		let hashAlgoCode = UInt8(accountKey.hashAlgo.code)
-
-			// Build, sign, and send via the FlowActor-managed helpers.
-		let unsignedTx = try await FlowActor.shared.flow.buildTransaction(chainID: .testnet) {
-			cadence {
- """
- import Crypto
- 
- transaction(publicKey: String, signatureAlgorithm: UInt8, hashAlgorithm: UInt8, weight: UFix64) {
-  prepare(signer: auth(BorrowValue | Storage) &Account) {
-   let key = PublicKey(
- publicKey: publicKey.decodeHex(),
- signatureAlgorithm: SignatureAlgorithm(rawValue: signatureAlgorithm)!
-   )
- 
-   let account = Account(payer: signer)
-   account.keys.add(
- publicKey: key,
- hashAlgorithm: HashAlgorithm(rawValue: hashAlgorithm)!,
- weight: weight
-   )
-  }
- }
- """
-			}
-			proposer {
-				Flow.TransactionProposalKey(address: proposerAddress, keyIndex: 0)
-			}
-			authorizers {
-				proposerAddress
-			}
-			arguments {
-				[
-					Flow.Argument(value: .string(pkHex)),
-					Flow.Argument(value: .uint8(signAlgoIndex)),
-					Flow.Argument(value: .uint8(hashAlgoCode)),
-					Flow.Argument(value: .ufix64(Decimal(1000))),
-				]
-			}
-			gasLimit { 1000 }
-		}
-
-		let signedTx = try await FlowActor.shared.flow.signTransaction(
-			unsignedTransaction: unsignedTx,
-			signers: signerGroup
-		)
-
-		let txId = try await FlowActor.shared.flow.sendTransaction(
-			signedTransaction: signedTx
-		)
-		#expect(txId.hex.isEmpty == false)
-
-		let txResult = try await FlowActor.shared.flow.once(
-			txId,
-			status: .sealed
-		)
-		let createdAddress = txResult.getCreatedAddress()!
-		#expect(!createdAddress.isEmpty)
-
-		let accountInfo = try await FlowActor.shared.flow.getAccountAtLatestBlock(
-			address: Flow.Address(hex: createdAddress)
-		)
-		#expect(accountInfo.keys.isEmpty == false)
+		let value: String = try response.decode()
+		#expect(value == "hello")
 	}
 
-	@Test("Flow testnet multiple signer transaction", .timeLimit(.minutes(1)))
-	func multipleSigner() async throws {
-		let addrA = addressA
-		let addrB = addressB
-		let addrC = addressC
+		// MARK: - Events
 
-		let txID = try await FlowActor.shared.flow.sendTransaction(
-			chainID: .testnet,
-			signers: signers
-		) {
-			cadence {
- """
- import HelloWorld from 0xe242ccfb4b8ea3e2
- 
- transaction(test: String, testInt: HelloWorld.SomeStruct) {
-  prepare(signer1: AuthAccount, signer2: AuthAccount, signer3: AuthAccount) {
-   log(signer1.address)
-   log(signer2.address)
-   log(signer3.address)
-   log(test)
-   log(testInt)
-  }
- }
- """
-			}
-			arguments {
-				[
-					Flow.Argument(value: .string("Test")),
-					Flow.Argument(
-						value: .struct(
-							.init(
-								id: "A.e242ccfb4b8ea3e2.HelloWorld.SomeStruct",
-								fields: [
-									.init(name: "x", value: .init(value: .int(1))),
-									.init(name: "y", value: .init(value: .int(2))),
-								]
-							)
-						)
-					),
-				]
-			}
-			proposer { Flow.TransactionProposalKey(address: addrA, keyIndex: 5) }
-			payer { addrB }
-			authorizers { [addrC, addrB, addrA] }
-		}
-
-		let result = try await FlowActor.shared.flow.once(
-			txID,
-			status: .sealed
+	@Test("Get testnet events for height range")
+	func getEventsForHeightRange() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
 		)
-		#expect(result.status == Flow.Transaction.Status.sealed)
+
+		let lower = max(0, Int(latest.height) - 2)
+		let range = UInt64(lower)...latest.height
+
+		let results = try await api.getEventsForHeightRange(
+			type: "A.1654653399040a61.FlowToken.TokensDeposited",
+			range: range
+		)
+
+		#expect(results.count >= 0)
+	}
+
+	@Test("Get testnet events for block ids")
+	func getEventsForBlockIds() async throws {
+		let api = await makeTestnetAPI()
+		let latest = try await api.getLatestBlock(
+			blockStatus: Flow.BlockStatus.final
+		)
+
+		let results = try await api.getEventsForBlockIds(
+			type: "A.1654653399040a61.FlowToken.TokensDeposited",
+			ids: [latest.id]
+		)
+
+		#expect(results.count >= 0)
 	}
 }

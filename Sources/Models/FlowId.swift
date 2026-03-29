@@ -13,7 +13,7 @@ public extension Flow {
 		/// collection id, etc.
 	struct ID: FlowEntity, Equatable, Hashable, Sendable {
 			/// Raw ID bytes (big-endian).
-		public var data: Data
+		public var  data: Data
 
 			/// Create an ID from raw bytes.
 		public init(data: Data) {
@@ -60,59 +60,32 @@ extension Flow.ID: CustomStringConvertible {
 
 	// MARK: - Concurrency helpers (wait for transaction status)
 
+
 public extension Flow.ID {
+
+		/// Wait until the transaction reaches at least the desired status, or times out.
+		/// Currently implemented via HTTP polling; WebSocket streaming can be reintroduced
+		/// by extending FlowWebSocketCenter later.
 	func once(
 		status desiredStatus: Flow.Transaction.Status,
 		timeout: TimeInterval = 60
 	) async throws -> Flow.TransactionResult {
 
-		let stream: AsyncThrowingStream<
-			Flow.WebSocketTopicResponse<Flow.WSTransactionResponse>,
-			Error
-		> = try await FlowWebSocketCenter.shared.transactionStatusStream(for: self)
+		let api = await FlowActors.access.currentClient
+		let deadline = Date().addingTimeInterval(timeout)
 
-		return try await withThrowingTaskGroup(
-			of: Flow.TransactionResult.self,
-			returning: Flow.TransactionResult.self
-		) { group in
+		while Date() < deadline {
+			let result = try await api.getTransactionResultById(id: self)
 
-			group.addTask { () -> Flow.TransactionResult in
-				for try await event in stream {
-						// NOTE: WebSocketTopicResponse wraps the decoded payload.
-						// Your center yields: WebSocketTopicResponse<WSTransactionResponse>
-					guard let ws = event.payload else { continue }
-
-					let txResult: Flow.TransactionResult = try ws.asTransactionResult()
-
-					if txResult.status.rawValue >= desiredStatus.rawValue {
-						return txResult
-					}
-				}
-
-				throw Flow.FError.customError(
-					msg: "No matching transactionResult found for transaction ID \(self.hex)"
-				)
+			if result.status.rawValue >= desiredStatus.rawValue {
+				return result
 			}
 
-			group.addTask { () -> Flow.TransactionResult in
-				try await _Concurrency.Task.sleep(
-					nanoseconds: UInt64(timeout * 1_000_000_000)
-				)
-				throw Flow.FError.customError(
-					msg: "Timeout waiting for transaction status update for \(self.hex)"
-				)
-			}
-
-			guard let first = try await group.next() else {
-				group.cancelAll()
-				throw Flow.FError.customError(
-					msg: "Task group finished without result for transaction ID \(self.hex)"
-				)
-			}
-
-			group.cancelAll()
-			return first
+			try await _Concurrency.Task.sleep(nanoseconds: 500_000_000) // 0.5s
 		}
+
+		throw Flow.FError.customError(
+			msg: "Timeout waiting for transaction status \(desiredStatus) for \(self.hex)"
+		)
 	}
 }
-
