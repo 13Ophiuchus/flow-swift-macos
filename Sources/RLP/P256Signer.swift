@@ -19,7 +19,7 @@
 	//
 
 import CryptoKit
-import Flow
+
 import Foundation
 
 struct ECDSA_P256_Signer: FlowSigner {

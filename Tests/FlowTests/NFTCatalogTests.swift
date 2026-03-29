@@ -14,7 +14,7 @@ import Testing
 struct NFTCatalogTests {
 
 	private func makeTestFlow(chainID: Flow.ChainID) async -> Flow {
-		var flow = Flow()
+		let flow = Flow()
 		await flow.configure(chainID: chainID)
 		return flow
 	}
