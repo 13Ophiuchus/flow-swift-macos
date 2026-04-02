@@ -37,6 +37,9 @@ let package = Package(
 			path: "Sources",
 			resources: [
 				.copy("Cadence/CommonCadence/"),
+			],
+			swiftSettings: [
+				.enableUpcomingFeature("StrictConcurrency"),
 			]
 		),
 		.testTarget(

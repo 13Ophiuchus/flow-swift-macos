@@ -1,10 +1,10 @@
 import Foundation
 
 public enum FlowActors {
-	static let access    = FlowAccessActor.shared
-	static let websocket = FlowWebSocketCenter.shared
-	static let config    = FlowConfigActor.shared
-	static let crypto    = FlowCryptoActor.shared
+	public static let access    = FlowAccessActor.shared
+	public static let websocket = FlowWebSocketCenter.shared
+	public static let config    = FlowConfigActor.shared
+	public static let crypto    = FlowCryptoActor.shared
 }
 
 public final class Flow: @unchecked Sendable {
