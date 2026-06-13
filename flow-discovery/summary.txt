@@ -1,0 +1,183 @@
+== Files scanned ==
+      99
+
+== Type counts ==
+ 132 extension
+ 128 struct
+  62 enum
+  16 actor
+  14 protocol
+  14 class
+
+== Top function files ==
+  42 Tests/FlowTests/CadenceTypeTest.swift
+  42 Tests/FlowTests/ArgumentDecodeTests.swift
+  38 Sources/Models/FlowCadence.swift
+  28 Sources/Network/FlowAccessProtocol.swift
+  28 Sources/Build/TransactionBuild.swift
+  27 Tests/FlowTests/MockFlowAccessAPI.swift
+  26 Tests/FlowTests/FlowActorUnitTests.swift
+  22 Tests/FlowTests/FlowAccessAPIOnTestnetTests.swift
+  22 Tests/FlowTests/FlowAccessAPIOnMainnetTests.swift
+  22 Sources/Actors/FlowAccessActor.swift
+  20 Sources/Network/HTTP/FlowHTTPClient.swift
+  20 Sources/Codeable/FlowArgument+Encode.swift
+  19 Sources/Network/FlowAccess.swift
+  18 Sources/Parallel/FlowParallelClient.swift
+  16 Tests/FlowTests/BatchProcessorTests.swift
+  12 Tests/FlowTests/FlowActorIntegrationTests.swift
+  10 Tests/FlowTests/RLPTests.swift
+  10 Sources/RLP/RLP.swift
+   9 Tests/FlowTests/FlowOperationTest.swift
+   9 Tests/FlowTests/ArgumentEncodeTests.swift
+   9 Sources/Codeable/FlowArgument+Decode.swift
+   9 Sources/BatchProcessor.swift
+   9 Sources/Actors/FlowWebsocketActor.swift
+   8 Sources/Network/Websocket/PublisherCenter.swift
+   8 Sources/Flow.swift
+   7 Sources/Models/FlowEvent.swift
+   7 Sources/Cadence/ContractAddress.swift
+   6 Tests/FlowTests/PublisherTests.swift
+   6 Tests/FlowTests/FlowParallelClientScriptsTests.swift
+   6 Tests/FlowTests/FlowAddressTest.swift
+
+== High-value Flow files ==
+Sources/Actors/FlowAccessActor.swift
+Sources/Actors/FlowTransport.swift
+Sources/Actors/FlowWebsocketActor.swift
+Sources/BatchProcessor.swift
+Sources/Build/TransactionBuild.swift
+Sources/Cadence/Cadence+Child.swift
+Sources/Cadence/Cadence+EVM.swift
+Sources/Cadence/Cadence+Staking.swift
+Sources/Cadence/Cadence+Token.swift
+Sources/Cadence/CadenceLoader.swift
+Sources/Cadence/CadenceTargetType.swift
+Sources/Codeable/FlowArgument+Encode.swift
+Sources/FCLFlow.swift
+Sources/Flow.swift
+Sources/FlowAccountService.swift
+Sources/FlowAddressesFile.swift
+Sources/Models/FlowAccount.swift
+Sources/Models/FlowAddress.swift
+Sources/Models/FlowAddressValidation.swift
+Sources/Models/FlowArgument.swift
+Sources/Models/FlowBlock.swift
+Sources/Models/FlowCadence.swift
+Sources/Models/FlowCollection.swift
+Sources/Models/FlowEvent.swift
+Sources/Models/FlowId.swift
+Sources/Models/FlowScript.swift
+Sources/Models/FlowSigner.swift
+Sources/Models/FlowTransaction.swift
+Sources/Models/FlowTransaction+Codable.swift
+Sources/Models/FlowTransaction+Signer.swift
+Sources/Network/Flow+AddressValidation.swift
+Sources/Network/FlowAccess.swift
+Sources/Network/FlowAccessProtocol.swift
+Sources/Network/HTTP/AccessEndpoint.swift
+Sources/Network/HTTP/FlowHTTPClient.swift
+Sources/Network/HTTP/FlowHTTPModel.swift
+Sources/Network/Websocket/FlowPublisher.swift
+Sources/Network/Websocket/FlowWebSocketCenter.swift
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift
+Sources/Network/Websocket/NIO/WebSocketTopic.swift
+Sources/Network/Websocket/PublisherCenter.swift
+Sources/Network/Websocket/WebsocketModels.swift
+Sources/Network/Websocket/WebSocketRequest.swift
+Sources/Parallel/FlowAddressLoader.swift
+Sources/Parallel/FlowParallelClient.swift
+Sources/RLP/P256FlowSigner.swift
+Sources/RLP/P256Signer.swift
+
+== Transaction-related functions ==
+Sources/Parallel/FlowParallelClient.swift:260:	public func sendTransactions<T: Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:272:	public func sendTransactionsSafely<T: Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:286:	public func sendTransactions<T: CadenceTargetType & Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:301:	public func sendTransactionsSafely<T: CadenceTargetType & Hashable & Sendable>(
+Sources/FCLFlow.swift:10:	public static func buildTransaction(
+Sources/Flow.swift:68:	func onceFinalized(_ transactionId: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Flow.swift:72:	func onceExecuted(_ transactionId: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Flow.swift:76:	func onceSealed(_ transactionId: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Network/Websocket/FlowWebSocketCenter.swift:82:	public func subscribeToTransactionStatus(
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:99:	public func sendTransactionStatusSubscribe(id: Flow.ID) async {
+Sources/Network/FlowAccess.swift:66:	func sendTransaction(transaction: Flow.Transaction) async throws -> Flow.ID {
+Sources/Network/FlowAccess.swift:71:	func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {
+Sources/Network/FlowAccess.swift:76:	func getTransactionResultById(id: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Network/HTTP/FlowHTTPClient.swift:212:	public func sendTransaction(
+Sources/Network/HTTP/FlowHTTPClient.swift:221:	public func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {
+Sources/Network/HTTP/FlowHTTPClient.swift:225:	public func getTransactionResultById(
+Sources/Network/FlowAccessProtocol.swift:66:	func sendTransaction(transaction: Flow.Transaction) async throws -> Flow.ID
+Sources/Network/FlowAccessProtocol.swift:68:	func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction
+Sources/Network/FlowAccessProtocol.swift:70:	func getTransactionResultById(id: Flow.ID) async throws -> Flow.TransactionResult
+Sources/Network/FlowAccessProtocol.swift:133:	func getTransactionById(id: String) async throws -> Flow.Transaction {
+Sources/Network/FlowAccessProtocol.swift:137:	func getTransactionResultById(id: String) async throws -> Flow.TransactionResult {
+Sources/BatchProcessor.swift:86:	public func sendTransactions<T: Hashable & Sendable>(
+Sources/BatchProcessor.swift:98:	public func sendTransactionsSafely<T: Hashable & Sendable>(
+Sources/Actors/FlowAccessActor.swift:76:	public func sendTransaction(
+Sources/Actors/FlowAccessActor.swift:82:	public func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {
+Sources/Actors/FlowAccessActor.swift:86:	public func getTransactionResultById(id: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Actors/FlowWebsocketActor.swift:66:		public func subscribeToTransactionStatus(
+Sources/Build/TransactionBuild.swift:129:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:286:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:298:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:323:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:345:	func sendTransaction(
+Sources/Build/TransactionBuild.swift:353:	func sendTransaction(
+Sources/Build/TransactionBuild.swift:359:	func sendTransaction(
+Sources/Build/TransactionBuild.swift:377:	func sendTransaction(
+Sources/Cadence/CadenceTargetType.swift:49:	public func sendTransaction<T: CadenceTargetType>(
+Tests/FlowTests/MockFlowAccessAPI.swift:142:	func sendTransaction(transaction: Flow.Transaction) async throws -> Flow.ID {
+Tests/FlowTests/MockFlowAccessAPI.swift:148:	func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {
+Tests/FlowTests/MockFlowAccessAPI.swift:153:	func getTransactionResultById(id: Flow.ID) async throws -> Flow.TransactionResult {
+Tests/FlowTests/BatchProcessorTests.swift:273:	func sendTransactions_returnsTransactionIDsPerTarget() async throws {
+Tests/FlowTests/BatchProcessorTests.swift:287:	func sendTransactionsSafely_returnsMixedTransactionResults() async {
+Tests/FlowTests/FlowActorUnitTests.swift:108:	func sendTransaction() async throws {
+Tests/FlowTests/FlowActorUnitTests.swift:267:	func sendTransactionCallsAPI() async throws {
+
+== Script-related functions ==
+Sources/Codeable/FlowArgument+Decode.swift:12:	func decode() -> Any?
+Sources/Codeable/FlowArgument+Decode.swift:14:	func decode<T>(_ decodable: T.Type) throws -> T where T: Decodable
+Sources/Codeable/FlowArgument+Decode.swift:16:	func decode<T>() throws -> T where T: Decodable
+Sources/Codeable/FlowArgument+Decode.swift:25:	public func decode<T>() throws -> T where T: Decodable {
+Sources/Codeable/FlowArgument+Decode.swift:50:	public func decode<T>(_ decodable: T.Type) throws -> T where T: Decodable {
+Sources/Codeable/FlowArgument+Decode.swift:55:	public func decode() -> Any? {
+Sources/Codeable/FlowArgument+Decode.swift:224:	func decode<T>(_ type: T.Type) -> [T: Any?] {
+Sources/Codeable/DecodeFlexible.swift:86:	func decodeFlexible<T>(
+Sources/Network/FlowAccess.swift:119:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccess.swift:132:	func executeScriptAtBlockId(
+Sources/Network/FlowAccess.swift:145:	func executeScriptAtBlockHeight(
+Sources/Network/HTTP/FlowHTTPClient.swift:27:	public static func decode<T: Decodable>(
+Sources/Network/HTTP/FlowHTTPClient.swift:252:public func executeScriptAtLatestBlock(
+Sources/Network/HTTP/FlowHTTPClient.swift:270:	public func executeScriptAtBlockId(
+Sources/Network/HTTP/FlowHTTPClient.swift:288:	public func executeScriptAtBlockHeight(
+Sources/Network/FlowAccessProtocol.swift:82:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:88:	func executeScriptAtBlockId(
+Sources/Network/FlowAccessProtocol.swift:94:	func executeScriptAtBlockHeight(
+Sources/Network/FlowAccessProtocol.swift:148:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:160:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:172:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:186:	func executeScriptAtBlockId(
+Sources/Network/FlowAccessProtocol.swift:200:	func executeScriptAtBlockHeight(
+Sources/Models/FlowEvent.swift:145:	public func decode() -> Any? {
+Sources/Models/FlowEvent.swift:149:	public func decode<T: Decodable>(_ decodable: T.Type) throws -> T {
+Sources/Models/FlowEvent.swift:156:	public func decode<T: Decodable>() throws -> T {
+Sources/Models/FlowScript.swift:45:	public func decode() -> Any? {
+Sources/Models/FlowScript.swift:56:	public func decode<T>() throws -> T where T: Decodable {
+Sources/Actors/FlowAccessActor.swift:111:	public func executeScriptAtLatestBlock(
+Sources/Actors/FlowAccessActor.swift:123:	public func executeScriptAtBlockId(
+Sources/Actors/FlowAccessActor.swift:135:	public func executeScriptAtBlockHeight(
+Sources/Cadence/CadenceTargetType.swift:27:	public func query<T: Decodable>(
+Tests/FlowTests/MockFlowAccessAPI.swift:184:	func executeScriptAtLatestBlock(
+Tests/FlowTests/MockFlowAccessAPI.swift:194:	func executeScriptAtBlockId(
+Tests/FlowTests/MockFlowAccessAPI.swift:203:	func executeScriptAtBlockHeight(
+Tests/FlowTests/CadenceTargetMainnetTests.swift:23:	func query() async throws {
+Tests/FlowTests/FlowAccessAPIOnTestnetTests.swift:159:	func executeScriptAtLatestBlockNoArgs() async throws {
+Tests/FlowTests/FlowAccessAPIOnTestnetTests.swift:179:	func executeScriptAtLatestBlockWithAddressArg() async throws {
+Tests/FlowTests/FlowAccessAPIOnTestnetTests.swift:202:	func executeScriptAtBlockId() async throws {
+Tests/FlowTests/FlowAccessAPIOnTestnetTests.swift:225:	func executeScriptAtBlockHeight() async throws {
+Tests/FlowTests/FlowAccessAPIOnMainnetTests.swift:161:	func executeScriptAtLatestBlockNoArgs() async throws {
+Tests/FlowTests/FlowAccessAPIOnMainnetTests.swift:181:	func executeScriptAtLatestBlockWithAddressArg() async throws {
+Tests/FlowTests/FlowAccessAPIOnMainnetTests.swift:204:	func executeScriptAtBlockId() async throws {
+Tests/FlowTests/FlowAccessAPIOnMainnetTests.swift:227:	func executeScriptAtBlockHeight() async throws {

@@ -59,12 +59,17 @@ public extension Flow {
 			// MARK: - Initializers
 
 		public init(hex: String) {
-			self.init( data: hex.stripHexPrefix().hexValue.data)
+			let stripped = hex.stripHexPrefix()
+			let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
+			self.init( padded.hexValue.data)
 		}
 
 		public init(_ hex: String) {
-			self.init( data: hex.stripHexPrefix().hexValue.data)
+			let stripped = hex.stripHexPrefix()
+			let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
+			self.init( padded.hexValue.data)
 		}
+
 
 		public init(data: Data) {
 			if data.bytes.count == Flow.Address.byteLength {

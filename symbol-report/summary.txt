@@ -1,0 +1,115 @@
+== Type counts by kind ==
+ 132 extension
+ 128 struct
+  62 enum
+  16 actor
+  14 protocol
+  14 class
+
+== Top files by function count ==
+  42 Tests/FlowTests/CadenceTypeTest.swift
+  42 Tests/FlowTests/ArgumentDecodeTests.swift
+  38 Sources/Models/FlowCadence.swift
+  28 Sources/Network/FlowAccessProtocol.swift
+  28 Sources/Build/TransactionBuild.swift
+  27 Tests/FlowTests/MockFlowAccessAPI.swift
+  26 Tests/FlowTests/FlowActorUnitTests.swift
+  22 Tests/FlowTests/FlowAccessAPIOnTestnetTests.swift
+  22 Tests/FlowTests/FlowAccessAPIOnMainnetTests.swift
+  22 Sources/Actors/FlowAccessActor.swift
+  20 Sources/Network/HTTP/FlowHTTPClient.swift
+  20 Sources/Codeable/FlowArgument+Encode.swift
+  19 Sources/Network/FlowAccess.swift
+  18 Sources/Parallel/FlowParallelClient.swift
+  16 Tests/FlowTests/BatchProcessorTests.swift
+  12 Tests/FlowTests/FlowActorIntegrationTests.swift
+  10 Tests/FlowTests/RLPTests.swift
+  10 Sources/RLP/RLP.swift
+   9 Tests/FlowTests/FlowOperationTest.swift
+   9 Tests/FlowTests/ArgumentEncodeTests.swift
+   9 Sources/Codeable/FlowArgument+Decode.swift
+   9 Sources/BatchProcessor.swift
+   9 Sources/Actors/FlowWebsocketActor.swift
+   8 Sources/Network/Websocket/PublisherCenter.swift
+   8 Sources/Flow.swift
+   7 Sources/Models/FlowEvent.swift
+   7 Sources/Cadence/ContractAddress.swift
+   6 Tests/FlowTests/PublisherTests.swift
+   6 Tests/FlowTests/FlowParallelClientScriptsTests.swift
+   6 Tests/FlowTests/FlowAddressTest.swift
+   6 Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift
+   6 Sources/Network/Websocket/FlowPublisher.swift
+   6 Sources/Models/FlowTransaction.swift
+   6 Sources/Extension/String.swift
+   6 Sources/Extension/Publisher+Async.swift
+   5 Tests/FlowTests/NFTCatalogTests.swift
+   5 Sources/Log/FlowLogger.swift
+   5 Sources/Extension/Data.swift
+   5 Sources/Extension/Array.swift
+   4 Tests/FlowTests/WebSocketTests.swift
+
+== Flow-focused files ==
+Sources/Actors/FlowAccessActor.swift
+Sources/Actors/FlowActor.swift
+Sources/Actors/FlowTransport.swift
+Sources/Actors/FlowWebsocketActor.swift
+Sources/BatchProcessor.swift
+Sources/Build/TransactionBuild.swift
+Sources/Cadence/Cadence+Child.swift
+Sources/Cadence/Cadence+EVM.swift
+Sources/Cadence/Cadence+Staking.swift
+Sources/Cadence/Cadence+Token.swift
+Sources/Cadence/CadenceLoader.swift
+Sources/Cadence/CadenceTargetType.swift
+Sources/Cadence/ContractAddress.swift
+Sources/Cadence/ContractAddressRegisterDelegate.swift
+Sources/Codeable/FlowArgument+Decode.swift
+Sources/Codeable/FlowArgument+Encode.swift
+Sources/Error/FlowError.swift
+Sources/Error/FVMError.swift
+Sources/Extension/Array.swift
+Sources/FCLFlow.swift
+Sources/Flow.swift
+Sources/FlowAccountService.swift
+Sources/FlowAddressesFile.swift
+Sources/Models/FlowAccount.swift
+Sources/Models/FlowAddress.swift
+Sources/Models/FlowAddressValidation.swift
+Sources/Models/FlowAlgorithm.swift
+Sources/Models/FlowArgument.swift
+Sources/Models/FlowBlock.swift
+Sources/Models/FlowCadence.swift
+Sources/Models/FlowChainId.swift
+Sources/Models/FlowCollection.swift
+Sources/Models/FlowDomainTag.swift
+Sources/Models/FlowEvent.swift
+Sources/Models/FlowId.swift
+Sources/Models/FlowKind.swift
+Sources/Models/FlowScript.swift
+Sources/Models/FlowSignature.swift
+Sources/Models/FlowSigner.swift
+Sources/Models/FlowTransaction.swift
+Sources/Models/FlowTransaction+Codable.swift
+Sources/Models/FlowTransaction+Signer.swift
+Sources/Models/Signer.swift
+Sources/Network/Flow+AddressValidation.swift
+Sources/Network/FlowAccess.swift
+Sources/Network/FlowAccessProtocol.swift
+Sources/Network/FlowBlockStatus.swift
+Sources/Network/FlowConnectionState.swift
+Sources/Network/HTTP/AccessEndpoint.swift
+Sources/Network/HTTP/FlowHTTPClient.swift
+Sources/Network/HTTP/FlowHTTPModel.swift
+Sources/Network/HTTP/Target.swift
+Sources/Network/Websocket/FlowPublisher.swift
+Sources/Network/Websocket/FlowWebSocketCenter.swift
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift
+Sources/Network/Websocket/NIO/WebSocketTopic.swift
+Sources/Network/Websocket/PublisherCenter.swift
+Sources/Network/Websocket/WebsocketModels.swift
+Sources/Network/Websocket/WebSocketRequest.swift
+Sources/Parallel/FlowAddressLoader.swift
+Sources/Parallel/FlowParallelClient.swift
+Sources/RLP/P256FlowSigner.swift
+Sources/RLP/P256Signer.swift

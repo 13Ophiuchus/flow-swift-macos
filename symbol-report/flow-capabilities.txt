@@ -1,0 +1,1249 @@
+Sources/FlowAccountService.swift:2://  FlowAccountService.swift
+Sources/FlowAccountService.swift:10:public struct FlowAccountService {
+Sources/FlowAccountService.swift:18:	public func loadAccounts(
+Sources/FlowAccountService.swift:19:		_ addresses: [Flow.Address],
+Sources/FlowAccountService.swift:21:	) async throws -> [Flow.Address: FlowData] {
+Sources/FlowAccountService.swift:22:		try await batchProcessor.processAccounts(addresses, maxConcurrent: maxConcurrent)
+Sources/FlowAccountService.swift:25:	public func loadAccountsSafely(
+Sources/FlowAccountService.swift:26:		_ addresses: [Flow.Address],
+Sources/FlowAccountService.swift:28:	) async -> [Flow.Address: Result<FlowData, Error>] {
+Sources/FlowAccountService.swift:29:		await batchProcessor.processAccountsSafely(addresses, maxConcurrent: maxConcurrent)
+Sources/Parallel/FlowAddressLoader.swift:2:	//  FlowAddressLoader.swift
+Sources/Parallel/FlowAddressLoader.swift:11:public struct FlowAddressListFile: Decodable {
+Sources/Parallel/FlowAddressLoader.swift:16:public struct FlowContractAddressMapFile: Decodable {
+Sources/Parallel/FlowAddressLoader.swift:29:public enum FlowAddressLoader {
+Sources/Parallel/FlowAddressLoader.swift:33:	public static func loadAddressList(from url: URL) throws -> [Flow.Address] {
+Sources/Parallel/FlowAddressLoader.swift:36:		let decoded: FlowAddressListFile = try decoder.decode(FlowAddressListFile.self, from: data)
+Sources/Parallel/FlowAddressLoader.swift:37:		return decoded.addresses.compactMap { Flow.Address(hex: $0) }
+Sources/Parallel/FlowAddressLoader.swift:40:	public static func loadAddressList(fromPath path: String) throws -> [Flow.Address] {
+Sources/Parallel/FlowAddressLoader.swift:41:		try loadAddressList(from: URL(fileURLWithPath: path))
+Sources/Parallel/FlowAddressLoader.swift:46:		/// Load a contract-address mapping JSON and populate a ContractAddressRegister.
+Sources/Parallel/FlowAddressLoader.swift:49:		into register: ContractAddressRegister
+Sources/Parallel/FlowAddressLoader.swift:53:		let decoded: FlowContractAddressMapFile = try decoder.decode(
+Sources/Parallel/FlowAddressLoader.swift:54:			FlowContractAddressMapFile.self,
+Sources/Parallel/FlowAddressLoader.swift:60:				register.setAddress(addr, for: name, on: .mainnet)
+Sources/Parallel/FlowAddressLoader.swift:66:				register.setAddress(addr, for: name, on: .testnet)
+Sources/Parallel/FlowAddressLoader.swift:72:				register.setAddress(addr, for: name, on: .emulator)
+Sources/Parallel/FlowAddressLoader.swift:86:					register.setAddress(addr, for: name, on: chainID)
+Sources/Parallel/FlowAddressLoader.swift:95:		into register: ContractAddressRegister
+Sources/Parallel/FlowParallelClient.swift:13:	_ target: any CadenceTargetType,
+Sources/Parallel/FlowParallelClient.swift:17:public typealias FlowTransactionSender = @Sendable (
+Sources/Parallel/FlowParallelClient.swift:18:	_ target: any CadenceTargetType,
+Sources/Parallel/FlowParallelClient.swift:19:	_ signers: [FlowSigner],
+Sources/Parallel/FlowParallelClient.swift:30:	private let transactionSender: FlowTransactionSender
+Sources/Parallel/FlowParallelClient.swift:37:		transactionSender: FlowTransactionSender? = nil
+Sources/Parallel/FlowParallelClient.swift:56:			return try await flow.sendTransaction(
+Sources/Parallel/FlowParallelClient.swift:64:		// MARK: - Accounts
+Sources/Parallel/FlowParallelClient.swift:66:	public func loadAccounts(
+Sources/Parallel/FlowParallelClient.swift:67:		fromAddressJSON path: String,
+Sources/Parallel/FlowParallelClient.swift:69:	) async throws -> [Flow.Address: FlowData] {
+Sources/Parallel/FlowParallelClient.swift:70:		let addresses = try FlowAddressLoader.loadAddressList(fromPath: path)
+Sources/Parallel/FlowParallelClient.swift:71:		return try await batchProcessor.processAccounts(
+Sources/Parallel/FlowParallelClient.swift:77:	public func loadAccounts(
+Sources/Parallel/FlowParallelClient.swift:78:		_ addresses: [Flow.Address],
+Sources/Parallel/FlowParallelClient.swift:80:	) async throws -> [Flow.Address: FlowData] {
+Sources/Parallel/FlowParallelClient.swift:81:		try await batchProcessor.processAccounts(
+Sources/Parallel/FlowParallelClient.swift:87:	public func loadAccountsSafely(
+Sources/Parallel/FlowParallelClient.swift:88:		fromAddressJSON path: String,
+Sources/Parallel/FlowParallelClient.swift:90:	) async -> [Flow.Address: Result<FlowData, Error>] {
+Sources/Parallel/FlowParallelClient.swift:92:			let addresses = try FlowAddressLoader.loadAddressList(fromPath: path)
+Sources/Parallel/FlowParallelClient.swift:93:			return await batchProcessor.processAccountsSafely(
+Sources/Parallel/FlowParallelClient.swift:102:	public func loadAccountsSafely(
+Sources/Parallel/FlowParallelClient.swift:103:		_ addresses: [Flow.Address],
+Sources/Parallel/FlowParallelClient.swift:105:	) async -> [Flow.Address: Result<FlowData, Error>] {
+Sources/Parallel/FlowParallelClient.swift:106:		await batchProcessor.processAccountsSafely(
+Sources/Parallel/FlowParallelClient.swift:140:	public func executeScripts<T: CadenceTargetType & Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:154:	public func executeScriptsSafely<T: CadenceTargetType & Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:170:	public func executeScripts<T: CadenceTargetType & Hashable & Sendable, Output: Decodable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:185:	public func executeScriptsSafely<T: CadenceTargetType & Hashable & Sendable, Output: Decodable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:202:	public func executeQueryScripts<T: CadenceTargetType & Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:215:	public func executeQueryScriptsSafely<T: CadenceTargetType & Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:228:	public func executeQueryScripts<T: CadenceTargetType & Hashable & Sendable, Output: Decodable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:243:	public func executeQueryScriptsSafely<T: CadenceTargetType & Hashable & Sendable, Output: Decodable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:260:	public func sendTransactions<T: Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:265:		try await batchProcessor.sendTransactions(
+Sources/Parallel/FlowParallelClient.swift:272:	public func sendTransactionsSafely<T: Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:277:		await batchProcessor.sendTransactionsSafely(
+Sources/Parallel/FlowParallelClient.swift:286:	public func sendTransactions<T: CadenceTargetType & Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:288:		signers: [FlowSigner],
+Sources/Parallel/FlowParallelClient.swift:293:		return try await batchProcessor.sendTransactions(
+Sources/Parallel/FlowParallelClient.swift:301:	public func sendTransactionsSafely<T: CadenceTargetType & Hashable & Sendable>(
+Sources/Parallel/FlowParallelClient.swift:303:		signers: [FlowSigner],
+Sources/Parallel/FlowParallelClient.swift:308:		return await batchProcessor.sendTransactionsSafely(
+Sources/FlowAddressesFile.swift:2://  FlowAddressesFile.swift
+Sources/FlowAddressesFile.swift:10://  FlowAddressesLoader.swift
+Sources/FlowAddressesFile.swift:16:public struct FlowAddressesFile: Decodable {
+Sources/FlowAddressesFile.swift:20:public enum FlowAddressesLoader {
+Sources/FlowAddressesFile.swift:23:    public static func load(from url: URL) throws -> [Flow.Address] {
+Sources/FlowAddressesFile.swift:25:        let decoded = try JSONDecoder().decode(FlowAddressesFile.self, from: data)
+Sources/FlowAddressesFile.swift:26:        return decoded.addresses.compactMap { Flow.Address(hex: $0) }
+Sources/FlowAddressesFile.swift:30:    public static func load(fromPath path: String) throws -> [Flow.Address] {
+Sources/Extension/Array.swift:31:extension Array where Element == Flow.Cadence.FValue {
+Sources/Extension/Array.swift:38:	func toValue() -> [Flow.Cadence.FValue] {
+Sources/FCLFlow.swift:10:	public static func buildTransaction(
+Sources/FCLFlow.swift:13:		@Flow.TransactionBuild.TransactionBuilder builder: @Sendable () -> [Flow.TransactionBuild]
+Sources/FCLFlow.swift:14:	) async throws -> Flow.Transaction {
+Sources/FCLFlow.swift:22:		return try await Flow.shared.buildTransaction(
+Sources/FCLFlow.swift:31:		signers: [FlowSigner],
+Sources/FCLFlow.swift:32:		@Flow.TransactionBuild.TransactionBuilder builder: @Sendable () -> [Flow.TransactionBuild]
+Sources/FCLFlow.swift:41:		return try await Flow.shared.sendTransaction(
+Sources/Codeable/FlowArgument+Decode.swift:3:	//  CadenceTypeTest
+Sources/Codeable/FlowArgument+Decode.swift:20:// They do not depend on FlowActor or Flow.shared, so they can be used
+Sources/Codeable/FlowArgument+Decode.swift:60:				return value.toAddress()?.hex.addHexPrefix()
+Sources/Codeable/FlowArgument+Encode.swift:4:	//  CadenceTypeTest
+Sources/Codeable/FlowArgument+Encode.swift:27:	func toFlowValue() -> Flow.Cadence.FValue?
+Sources/Codeable/FlowArgument+Encode.swift:31:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:37:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:43:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:49:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:55:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:61:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:67:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:73:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:79:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:85:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:91:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:97:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:103:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:109:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:115:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:121:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:128:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:139:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Codeable/FlowArgument+Encode.swift:152:extension Flow.Address: FlowEncodable {
+Sources/Codeable/FlowArgument+Encode.swift:153:	func toFlowValue() -> Flow.Cadence.FValue? {
+Sources/Flow.swift:3:public enum FlowActors {
+Sources/Flow.swift:4:	public static let access    = FlowAccessActor.shared
+Sources/Flow.swift:5:	public static let websocket = FlowWebSocketCenter.shared
+Sources/Flow.swift:11:	@FlowActor
+Sources/Flow.swift:17:	internal var addressRegisterStorage = ContractAddressRegister()
+Sources/Flow.swift:32:		get async { await FlowActors.config.chainID }
+Sources/Flow.swift:36:		await FlowActors.access.configure(chainID: chainID, accessAPI: nil)
+Sources/Flow.swift:39:	public func configure(chainID: ChainID, accessAPI: FlowAccessProtocol) async {
+Sources/Flow.swift:40:		await FlowActors.access.configure(chainID: chainID, accessAPI: accessAPI)
+Sources/Flow.swift:43:	public func createHTTPAccessAPI(chainID: ChainID) -> FlowAccessProtocol {
+Sources/Flow.swift:47:	public var accessAPI: FlowAccessProtocol {
+Sources/Flow.swift:48:		get async { await FlowActors.access.currentClient }
+Sources/Flow.swift:51:	public var websocketCenter: FlowWebSocketCenter {
+Sources/Flow.swift:52:		FlowActors.websocket
+Sources/Flow.swift:57:@FlowActor
+Sources/Flow.swift:62:		status: Flow.Transaction.Status,
+Sources/Flow.swift:64:	) async throws -> Flow.TransactionResult {
+Sources/Flow.swift:68:	func onceFinalized(_ transactionId: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Flow.swift:72:	func onceExecuted(_ transactionId: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Flow.swift:76:	func onceSealed(_ transactionId: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Flow.swift:80:	func isAddressVaildate(
+Sources/Flow.swift:81:		address: Flow.Address,
+Sources/Flow.swift:86:			_ = try await accessAPI.getAccountAtLatestBlock(
+Sources/Network/Websocket/FlowPublisher.swift:2:	//  FlowPublisher.swift
+Sources/Network/Websocket/FlowPublisher.swift:15:	enum PublisherEvent {
+Sources/Network/Websocket/FlowPublisher.swift:16:		case transactionStatus(id: Flow.ID, status: Flow.TransactionResult)
+Sources/Network/Websocket/FlowPublisher.swift:17:		case accountUpdate(address: Flow.Address)
+Sources/Network/Websocket/FlowPublisher.swift:26:	final class Publisher: @unchecked Sendable {
+Sources/Network/Websocket/FlowPublisher.swift:39:		static let shared = Publisher()
+Sources/Network/Websocket/FlowPublisher.swift:43:		private typealias TxPair = (Flow.ID, Flow.TransactionResult)
+Sources/Network/Websocket/FlowPublisher.swift:46:		private var accountContinuations: [UUID: AsyncStream<Flow.Address>.Continuation] = [:]
+Sources/Network/Websocket/FlowPublisher.swift:47:		private var blockContinuations: [UUID: AsyncStream<WSBlockHeader>.Continuation] = [:]
+Sources/Network/Websocket/FlowPublisher.swift:53:		public struct WSBlockHeader: Sendable {
+Sources/Network/Websocket/FlowPublisher.swift:74:		nonisolated public func transactionStream() -> AsyncStream<(Flow.ID, Flow.TransactionResult)> {
+Sources/Network/Websocket/FlowPublisher.swift:88:		nonisolated public func accountStream() -> AsyncStream<Flow.Address> {
+Sources/Network/Websocket/FlowPublisher.swift:102:		nonisolated public func blockStream() -> AsyncStream<WSBlockHeader> {
+Sources/Network/Websocket/FlowPublisher.swift:182:		public func publishTransactionStatus(id: Flow.ID, status: Flow.TransactionResult) {
+Sources/Network/Websocket/FlowPublisher.swift:188:		public func publishAccountUpdate(address: Flow.Address) {
+Sources/Network/Websocket/FlowPublisher.swift:207:		public func publishBlock(id: Flow.ID, height: String, timestamp: Date) {
+Sources/Network/Websocket/FlowPublisher.swift:208:			let header = WSBlockHeader(blockId: id, height: height, timestamp: timestamp)
+Sources/Network/Websocket/FlowPublisher.swift:225:	var publisher: Publisher {
+Sources/Network/Websocket/FlowPublisher.swift:226:		Publisher.shared
+Sources/Network/Websocket/FlowWebSocketCenter.swift:2:	//  FlowWebSocketCenter.swift
+Sources/Network/Websocket/FlowWebSocketCenter.swift:12:import NIOWebSocket
+Sources/Network/Websocket/FlowWebSocketCenter.swift:15:	/// Central coordinator for WebSocket connections and subscriptions.
+Sources/Network/Websocket/FlowWebSocketCenter.swift:16:public actor FlowWebSocketCenter {
+Sources/Network/Websocket/FlowWebSocketCenter.swift:18:	public static let shared = FlowWebSocketCenter()
+Sources/Network/Websocket/FlowWebSocketCenter.swift:20:	private let nioClient: FlowNIOWebSocketClient
+Sources/Network/Websocket/FlowWebSocketCenter.swift:26:		// `subscribeToTransactionStatus` creates a child AsyncThrowingStream that
+Sources/Network/Websocket/FlowWebSocketCenter.swift:28:	private let envelopeContinuation: AsyncStream<Flow.WebSocketEnvelope>.Continuation
+Sources/Network/Websocket/FlowWebSocketCenter.swift:29:	public  let envelopes: AsyncStream<Flow.WebSocketEnvelope>
+Sources/Network/Websocket/FlowWebSocketCenter.swift:31:	private static let defaultAddressesJSONPath: String =
+Sources/Network/Websocket/FlowWebSocketCenter.swift:32:	"/Users/nicreich/flow-swift-macos/Sources/Cadence/addresses.json"
+Sources/Network/Websocket/FlowWebSocketCenter.swift:35:	public init(nioClient: FlowNIOWebSocketClient? = nil) {
+Sources/Network/Websocket/FlowWebSocketCenter.swift:40:		var cont: AsyncStream<Flow.WebSocketEnvelope>.Continuation!
+Sources/Network/Websocket/FlowWebSocketCenter.swift:46:		let deliver: @Sendable (Flow.WebSocketEnvelope) -> Void = { [cont] in
+Sources/Network/Websocket/FlowWebSocketCenter.swift:53:			let client = try? FlowNIOWebSocketClient(
+Sources/Network/Websocket/FlowWebSocketCenter.swift:54:				addressesJSONPath: Self.defaultAddressesJSONPath,
+Sources/Network/Websocket/FlowWebSocketCenter.swift:57:			self.nioClient = client ?? FlowNIOWebSocketClient(
+Sources/Network/Websocket/FlowWebSocketCenter.swift:68:		/// Ensure the WebSocket connection is active.
+Sources/Network/Websocket/FlowWebSocketCenter.swift:79:		/// `TransactionStatusBody` payloads for the given transaction ID.
+Sources/Network/Websocket/FlowWebSocketCenter.swift:81:		/// `Flow.WebSocketEnvelope.id` carries the subscription ID (not `subscriptionId`).
+Sources/Network/Websocket/FlowWebSocketCenter.swift:82:	public func subscribeToTransactionStatus(
+Sources/Network/Websocket/FlowWebSocketCenter.swift:84:	) async throws -> AsyncThrowingStream<Flow.TopicResponse<Flow.TransactionStatusBody>, Error> {
+Sources/Network/Websocket/FlowWebSocketCenter.swift:85:		await nioClient.sendTransactionStatusSubscribe(id: id)
+Sources/Network/Websocket/FlowWebSocketCenter.swift:94:						// `WebSocketEnvelope.id` is the subscription ID field —
+Sources/Network/Websocket/WebsocketModels.swift:16:	enum WebSocketTopic: String, Codable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:23:		case sendAndGetTransactionStatuses = "send_and_get_transaction_statuses"
+Sources/Network/Websocket/WebsocketModels.swift:27:	enum WebSocketAction: String, Codable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:36:	struct WebSocketSubscribeRequest<Arguments: Encodable & Sendable>: Encodable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:38:		public let action: WebSocketAction
+Sources/Network/Websocket/WebsocketModels.swift:39:		public let topic: WebSocketTopic?
+Sources/Network/Websocket/WebsocketModels.swift:51:			action: WebSocketAction,
+Sources/Network/Websocket/WebsocketModels.swift:52:			topic: WebSocketTopic?,
+Sources/Network/Websocket/WebsocketModels.swift:63:	struct WebSocketSubscribeResponse: Decodable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:65:		public let action: WebSocketAction
+Sources/Network/Websocket/WebsocketModels.swift:66:		public let error: WebSocketSocketError?
+Sources/Network/Websocket/WebsocketModels.swift:70:	struct WebSocketSocketError: Codable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:76:	struct WebSocketTopicResponse<T: Decodable & Sendable>: Decodable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:78:		public let topic: WebSocketTopic
+Sources/Network/Websocket/WebsocketModels.swift:80:		public let error: WebSocketSocketError?
+Sources/Network/Websocket/WebsocketModels.swift:83:		// MARK: - Transaction status envelope
+Sources/Network/Websocket/WebsocketModels.swift:86:	struct WebSocketEnvelope: Decodable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:88:		public let topic: WebSocketTopic
+Sources/Network/Websocket/WebsocketModels.swift:89:		public let payload: TransactionStatusBody?
+Sources/Network/Websocket/WebsocketModels.swift:97:		public var transactionStatusPayload: TransactionStatusBody? {
+Sources/Network/Websocket/WebsocketModels.swift:102:		/// Transaction status payload body from websocket.
+Sources/Network/Websocket/WebsocketModels.swift:103:	struct TransactionStatusBody: Decodable, Sendable {
+Sources/Network/Websocket/WebsocketModels.swift:105:		public let status: Flow.Transaction.Status
+Sources/Network/Websocket/WebsocketModels.swift:111:		public func asTransactionResult() throws -> Flow.TransactionResult {
+Sources/Network/Websocket/WebsocketModels.swift:122:			return Flow.TransactionResult(
+Sources/Network/Websocket/WebSocketRequest.swift:2:	//  WebSocketRequest.swift
+Sources/Network/Websocket/WebSocketRequest.swift:13:		// MARK: - WebSocket transaction response / bridge
+Sources/Network/Websocket/WebSocketRequest.swift:15:	struct WSTransactionResponse: Decodable, Sendable {
+Sources/Network/Websocket/WebSocketRequest.swift:16:		public let status: Flow.Transaction.Status
+Sources/Network/Websocket/WebSocketRequest.swift:32:			/// Bridge to the public `TransactionResult` model.
+Sources/Network/Websocket/WebSocketRequest.swift:33:		public func asTransactionResult() throws -> Flow.TransactionResult {
+Sources/Network/Websocket/WebSocketRequest.swift:37:				throw Flow.FError.customError(msg: "Missing block_id in WebSocket transaction result")
+Sources/Network/Websocket/WebSocketRequest.swift:43:			return Flow.TransactionResult(
+Sources/Network/Websocket/WebSocketRequest.swift:54:		/// Convenience namespace for WebSocket-specific helpers.
+Sources/Network/Websocket/WebSocketRequest.swift:55:	enum WebSocketRequest {
+Sources/Network/Websocket/WebSocketRequest.swift:56:			/// Convert a raw `WSTransactionResponse` (as decoded from WebSocket JSON)
+Sources/Network/Websocket/WebSocketRequest.swift:57:			/// into the canonical `Flow.TransactionResult`.
+Sources/Network/Websocket/WebSocketRequest.swift:60:			/// the rest of the SDK works only with `TransactionResult`.
+Sources/Network/Websocket/WebSocketRequest.swift:61:		static func makeTransactionResult(from ws: Flow.WSTransactionResponse) throws -> Flow.TransactionResult {
+Sources/Network/Websocket/WebSocketRequest.swift:62:			try ws.asTransactionResult()
+Sources/Network/Websocket/WebSocketRequest.swift:66:		// MARK: - Block / account streaming types
+Sources/Network/Websocket/WebSocketRequest.swift:68:		/// Block status used in websocket arguments.
+Sources/Network/Websocket/WebSocketRequest.swift:69:	enum WebSocketBlockStatus: String, Codable, Sendable {
+Sources/Network/Websocket/WebSocketRequest.swift:74:		/// Transaction status request arguments (`transaction_statuses` topic).
+Sources/Network/Websocket/WebSocketRequest.swift:75:	struct WebSocketTransactionStatusRequest: Encodable, Sendable {
+Sources/Network/Websocket/WebSocketRequest.swift:87:		/// Block digests arguments (for `blocks` / `block_digests` topics).
+Sources/Network/Websocket/WebSocketRequest.swift:88:	struct WebSocketBlockDigestArguments: Encodable, Sendable {
+Sources/Network/Websocket/WebSocketRequest.swift:89:		public let blockStatus: WebSocketBlockStatus
+Sources/Network/Websocket/WebSocketRequest.swift:90:		public let startBlockHeight: String?
+Sources/Network/Websocket/WebSocketRequest.swift:91:		public let startBlockId: String?
+Sources/Network/Websocket/WebSocketRequest.swift:95:			case startBlockHeight = "start_block_height"
+Sources/Network/Websocket/WebSocketRequest.swift:96:			case startBlockId = "start_block_id"
+Sources/Network/Websocket/WebSocketRequest.swift:100:			blockStatus: WebSocketBlockStatus,
+Sources/Network/Websocket/WebSocketRequest.swift:101:			startBlockHeight: String? = nil,
+Sources/Network/Websocket/WebSocketRequest.swift:102:			startBlockId: String? = nil
+Sources/Network/Websocket/WebSocketRequest.swift:105:			self.startBlockHeight = startBlockHeight
+Sources/Network/Websocket/WebSocketRequest.swift:106:			self.startBlockId = startBlockId
+Sources/Network/Websocket/WebSocketRequest.swift:110:		/// Account status response for account-specific streaming topics.
+Sources/Network/Websocket/WebSocketRequest.swift:111:	struct WebSocketAccountStatusResponse: Codable, Sendable {
+Sources/Network/Websocket/WebSocketRequest.swift:114:		public let accountEvents: [String: [WebSocketAccountStatusEvent]]
+Sources/Network/Websocket/WebSocketRequest.swift:125:			accountEvents: [String: [WebSocketAccountStatusEvent]]
+Sources/Network/Websocket/WebSocketRequest.swift:133:		/// Single account status event, matching the WebSocket event shape.
+Sources/Network/Websocket/WebSocketRequest.swift:134:	struct WebSocketAccountStatusEvent: Codable, Sendable {
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:2:	//  FlowWebSocketFrameHandler.swift
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:8:import NIOWebSocket
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:13:	///   1. Via `onEnvelope` — routes into FlowWebSocketCenter's shared AsyncStream
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:14:	///      so callers of `subscribeToTransactionStatus` receive typed responses.
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:16:final class FlowWebSocketFrameHandler: ChannelInboundHandler, @unchecked Sendable {
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:18:	typealias InboundIn = WebSocketFrame
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:20:		/// Injected by FlowNIOWebSocketClient; feeds FlowWebSocketCenter's envelope bus.
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:21:	private let onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:23:	init(onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)? = nil) {
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:42:			let envelope = try JSONDecoder().decode(Flow.WebSocketEnvelope.self, from: Data(bytes))
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:47:				// 2. Also publish high-level events via Flow.Publisher (existing behaviour).
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:64:		_ envelope: Flow.WebSocketEnvelope,
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:73:			let result = try payload.asTransactionResult()
+Sources/Network/Websocket/NIO/FlowWebSocketFrameHandler.swift:75:				await Flow.shared.publisher.publishTransactionStatus(
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:2:	//  FlowNIOWebSocketClient.swift
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:10:import NIOWebSocket
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:13:public enum FlowWebSocketUpgradeEvent {
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:18:public final class FlowNIOWebSocketClient: @unchecked Sendable {
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:22:	public let addresses: [Flow.Address]
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:23:	private let accountService: FlowAccountService
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:30:		/// Wired by FlowWebSocketCenter into its shared AsyncStream.
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:31:	private let onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:38:		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)? = nil
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:40:		let loaded = try FlowAddressLoader.loadAddressList(fromPath: addressesJSONPath)
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:50:		addresses: [Flow.Address],
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:53:		accountService: FlowAccountService = FlowAccountService(),
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:54:		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)? = nil
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:75:		guard let endpoint = chainID.defaultWebSocketNode, let url = endpoint.url else {
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:79:		channel = try await connectWebSocket(to: url)
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:83:				_ = try await accountService.loadAccounts(addresses, maxConcurrent: 4)
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:99:	public func sendTransactionStatusSubscribe(id: Flow.ID) async {
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:100:		let args = Flow.WebSocketTransactionStatusRequest(txId: id.hex)
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:116:		topic: Flow.WebSocketTopic,
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:121:		let request = Flow.WebSocketSubscribeRequest(
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:132:		let frame = WebSocketFrame(
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:148:	private func connectWebSocket(to url: URL) async throws -> Channel {
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:181:				return Self.addHTTPAndWebSocketHandlers(to: channel, onEnvelope: deliver)
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:191:					headers.add(name: "Sec-WebSocket-Version", value: "13")
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:192:					headers.add(name: "Sec-WebSocket-Key", value: UUID().uuidString)
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:220:	private static func addHTTPAndWebSocketHandlers(
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:222:		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:224:		let websocketUpgrader = NIOWebSocketClientUpgrader(
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:228:			channel.pipeline.addHandler(FlowWebSocketFrameHandler(onEnvelope: onEnvelope))
+Sources/Network/Websocket/NIO/FlowNIOWebSocketClient.swift:234:				context.fireUserInboundEventTriggered(FlowWebSocketUpgradeEvent.upgraded)
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:2:////  WebSocketTopic.swift
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:11://    enum WebSocketTopic: String, Codable, Sendable {
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:17://    struct WebSocketEnvelope: Decodable, Sendable {
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:19://        public let topic: WebSocketTopic
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:20://        public let payload: TransactionStatusBody?
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:30://        public var transactionStatusPayload: TransactionStatusBody? {
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:35://    /// Transaction status payload body from websocket.
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:36://    struct TransactionStatusBody: Decodable, Sendable {
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:38://        public let status: Flow.Transaction.Status
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:42://        public func asTransactionResult() throws -> Flow.TransactionResult {
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:43://            // Construct a TransactionResult using your existing model.
+Sources/Network/Websocket/NIO/WebSocketTopic.swift:44://            Flow.TransactionResult(
+Sources/Network/Websocket/PublisherCenter.swift:2://  PublisherCenter.swift
+Sources/Network/Websocket/PublisherCenter.swift:27:	final class PublisherCenter: @unchecked Sendable {
+Sources/Network/Websocket/PublisherCenter.swift:28:		public static let shared = PublisherCenter()
+Sources/Network/Websocket/PublisherCenter.swift:32:		private var accountSubs: [UUID: (address: Flow.Address, cont: AsyncStream<Flow.Address>.Continuation)] = [:]
+Sources/Network/Websocket/PublisherCenter.swift:41:		public func accountPublisher(address: Flow.Address) -> AsyncStream<Flow.Address> {
+Sources/Network/Websocket/PublisherCenter.swift:57:		public func connectionPublisher() -> AsyncStream<Bool> {
+Sources/Network/Websocket/PublisherCenter.swift:73:		public func walletResponsePublisher() -> AsyncStream<Flow.WalletResponse> {
+Sources/Network/Websocket/PublisherCenter.swift:89:		public func errorPublisher() -> AsyncStream<any Error> {
+Sources/Network/Websocket/PublisherCenter.swift:107:		public func publishAccountUpdate(address: Flow.Address) {
+Sources/Network/Flow+AddressValidation.swift:2://  Flow+AddressValidation.swift
+Sources/Network/Flow+AddressValidation.swift:12:    /// Note: original upstream spelling kept as `isAddressVaildate`.
+Sources/Network/Flow+AddressValidation.swift:13:    func isAddressVaildate(
+Sources/Network/Flow+AddressValidation.swift:14:        address: Flow.Address,
+Sources/Network/FlowAccess.swift:2:	//  FlowAccess.swift
+Sources/Network/FlowAccess.swift:11:	/// Prefer `Flow.shared.accessAPI` when you need a concrete `FlowAccessProtocol`.
+Sources/Network/FlowAccess.swift:21:		// MARK: - Blocks
+Sources/Network/FlowAccess.swift:23:	func getLatestBlockHeader(
+Sources/Network/FlowAccess.swift:24:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccess.swift:25:	) async throws -> Flow.BlockHeader {
+Sources/Network/FlowAccess.swift:27:		return try await api.getLatestBlockHeader(blockStatus: blockStatus)
+Sources/Network/FlowAccess.swift:30:	func getBlockHeaderById(id: Flow.ID) async throws -> Flow.BlockHeader {
+Sources/Network/FlowAccess.swift:32:		return try await api.getBlockHeaderById(id: id)
+Sources/Network/FlowAccess.swift:35:	func getBlockHeaderByHeight(height: UInt64) async throws -> Flow.BlockHeader {
+Sources/Network/FlowAccess.swift:37:		return try await api.getBlockHeaderByHeight(height: height)
+Sources/Network/FlowAccess.swift:40:	func getLatestBlock(
+Sources/Network/FlowAccess.swift:41:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccess.swift:42:	) async throws -> Flow.Block {
+Sources/Network/FlowAccess.swift:44:		return try await api.getLatestBlock(blockStatus: blockStatus)
+Sources/Network/FlowAccess.swift:47:	func getBlockById(id: Flow.ID) async throws -> Flow.Block {
+Sources/Network/FlowAccess.swift:49:		return try await api.getBlockById(id: id)
+Sources/Network/FlowAccess.swift:52:	func getBlockByHeight(height: UInt64) async throws -> Flow.Block {
+Sources/Network/FlowAccess.swift:54:		return try await api.getBlockByHeight(height: height)
+Sources/Network/FlowAccess.swift:64:		// MARK: - Transactions
+Sources/Network/FlowAccess.swift:66:	func sendTransaction(transaction: Flow.Transaction) async throws -> Flow.ID {
+Sources/Network/FlowAccess.swift:68:		return try await api.sendTransaction(transaction: transaction)
+Sources/Network/FlowAccess.swift:71:	func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {
+Sources/Network/FlowAccess.swift:73:		return try await api.getTransactionById(id: id)
+Sources/Network/FlowAccess.swift:76:	func getTransactionResultById(id: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Network/FlowAccess.swift:78:		return try await api.getTransactionResultById(id: id)
+Sources/Network/FlowAccess.swift:81:		// MARK: - Accounts
+Sources/Network/FlowAccess.swift:83:	func getAccountAtLatestBlock(
+Sources/Network/FlowAccess.swift:84:		address: Flow.Address,
+Sources/Network/FlowAccess.swift:85:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccess.swift:86:	) async throws -> Flow.Account {
+Sources/Network/FlowAccess.swift:88:		return try await api.getAccountAtLatestBlock(address: address, blockStatus: blockStatus)
+Sources/Network/FlowAccess.swift:91:	func getAccountByBlockHeight(
+Sources/Network/FlowAccess.swift:92:		address: Flow.Address,
+Sources/Network/FlowAccess.swift:94:	) async throws -> Flow.Account {
+Sources/Network/FlowAccess.swift:96:		return try await api.getAccountByBlockHeight(address: address, height: height)
+Sources/Network/FlowAccess.swift:109:	func getEventsForBlockIds(
+Sources/Network/FlowAccess.swift:114:		return try await api.getEventsForBlockIds(type: type, ids: ids)
+Sources/Network/FlowAccess.swift:119:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccess.swift:122:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccess.swift:125:		return try await api.executeScriptAtLatestBlock(
+Sources/Network/FlowAccess.swift:132:	func executeScriptAtBlockId(
+Sources/Network/FlowAccess.swift:138:		return try await api.executeScriptAtBlockId(
+Sources/Network/FlowAccess.swift:145:	func executeScriptAtBlockHeight(
+Sources/Network/FlowAccess.swift:151:		return try await api.executeScriptAtBlockHeight(
+Sources/Network/FlowBlockStatus.swift:2:	//  FlowBlockStatus.swift
+Sources/Network/FlowBlockStatus.swift:12:	public enum BlockStatus: String, Codable, Sendable {
+Sources/Network/HTTP/FlowHTTPClient.swift:13:public actor FlowHTTPAPI: FlowAccessProtocol {
+Sources/Network/HTTP/FlowHTTPClient.swift:50:	@FlowActor private func request<T: Decodable, U: TargetType>(_ target: U) async throws -> T {
+Sources/Network/HTTP/FlowHTTPClient.swift:129:		// MARK: - FlowAccessProtocol
+Sources/Network/HTTP/FlowHTTPClient.swift:132:		let result: [Flow.BlockHeaderResponse] = try await request(Flow.AccessEndpoint.ping)
+Sources/Network/HTTP/FlowHTTPClient.swift:144:	public func getLatestBlockHeader(
+Sources/Network/HTTP/FlowHTTPClient.swift:145:		blockStatus: Flow.BlockStatus
+Sources/Network/HTTP/FlowHTTPClient.swift:146:	) async throws -> Flow.BlockHeader {
+Sources/Network/HTTP/FlowHTTPClient.swift:147:		let result: [Flow.BlockHeaderResponse] = try await request(
+Sources/Network/HTTP/FlowHTTPClient.swift:148:			Flow.AccessEndpoint.getLatestBlockHeader(blockStatus: blockStatus)
+Sources/Network/HTTP/FlowHTTPClient.swift:156:	public func getBlockHeaderById(id: Flow.ID) async throws -> Flow.BlockHeader {
+Sources/Network/HTTP/FlowHTTPClient.swift:157:		let result: [Flow.BlockHeaderResponse] = try await request(
+Sources/Network/HTTP/FlowHTTPClient.swift:158:			Flow.AccessEndpoint.getBlockById(id: id)
+Sources/Network/HTTP/FlowHTTPClient.swift:166:	public func getBlockHeaderByHeight(height: UInt64) async throws -> Flow.BlockHeader {
+Sources/Network/HTTP/FlowHTTPClient.swift:167:		let result: [Flow.BlockHeaderResponse] = try await request(
+Sources/Network/HTTP/FlowHTTPClient.swift:168:			Flow.AccessEndpoint.getBlockByHeight(height: height)
+Sources/Network/HTTP/FlowHTTPClient.swift:176:	public func getLatestBlock(
+Sources/Network/HTTP/FlowHTTPClient.swift:177:		blockStatus: Flow.BlockStatus
+Sources/Network/HTTP/FlowHTTPClient.swift:178:	) async throws -> Flow.Block {
+Sources/Network/HTTP/FlowHTTPClient.swift:179:		let result: [Flow.BlockResponse] = try await request(
+Sources/Network/HTTP/FlowHTTPClient.swift:180:			Flow.AccessEndpoint.getLatestBlock(blockStatus: blockStatus)
+Sources/Network/HTTP/FlowHTTPClient.swift:185:		return block.toFlowBlock()
+Sources/Network/HTTP/FlowHTTPClient.swift:188:	public func getBlockById(id: Flow.ID) async throws -> Flow.Block {
+Sources/Network/HTTP/FlowHTTPClient.swift:189:		let result: [Flow.BlockResponse] = try await request(
+Sources/Network/HTTP/FlowHTTPClient.swift:190:			Flow.AccessEndpoint.getBlockById(id: id)
+Sources/Network/HTTP/FlowHTTPClient.swift:195:		return block.toFlowBlock()
+Sources/Network/HTTP/FlowHTTPClient.swift:198:	public func getBlockByHeight(height: UInt64) async throws -> Flow.Block {
+Sources/Network/HTTP/FlowHTTPClient.swift:199:		let result: [Flow.BlockResponse] = try await request(
+Sources/Network/HTTP/FlowHTTPClient.swift:200:			Flow.AccessEndpoint.getBlockByHeight(height: height)
+Sources/Network/HTTP/FlowHTTPClient.swift:205:		return block.toFlowBlock()
+Sources/Network/HTTP/FlowHTTPClient.swift:212:	public func sendTransaction(
+Sources/Network/HTTP/FlowHTTPClient.swift:213:		transaction: Flow.Transaction
+Sources/Network/HTTP/FlowHTTPClient.swift:215:		let result: Flow.TransactionResult = try await request(
+Sources/Network/HTTP/FlowHTTPClient.swift:216:			Flow.AccessEndpoint.sendTransaction(transaction: transaction)
+Sources/Network/HTTP/FlowHTTPClient.swift:221:	public func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {
+Sources/Network/HTTP/FlowHTTPClient.swift:222:		try await request(Flow.AccessEndpoint.getTransactionById(id: id))
+Sources/Network/HTTP/FlowHTTPClient.swift:225:	public func getTransactionResultById(
+Sources/Network/HTTP/FlowHTTPClient.swift:227:	) async throws -> Flow.TransactionResult {
+Sources/Network/HTTP/FlowHTTPClient.swift:228:		try await request(Flow.AccessEndpoint.getTransactionResultById(id: id))
+Sources/Network/HTTP/FlowHTTPClient.swift:231:	public func getAccountAtLatestBlock(
+Sources/Network/HTTP/FlowHTTPClient.swift:232:		address: Flow.Address,
+Sources/Network/HTTP/FlowHTTPClient.swift:233:		blockStatus: Flow.BlockStatus
+Sources/Network/HTTP/FlowHTTPClient.swift:234:	) async throws -> Flow.Account {
+Sources/Network/HTTP/FlowHTTPClient.swift:236:			Flow.AccessEndpoint.getAccountAtLatestBlock(
+Sources/Network/HTTP/FlowHTTPClient.swift:243:	public func getAccountByBlockHeight(
+Sources/Network/HTTP/FlowHTTPClient.swift:244:		address: Flow.Address,
+Sources/Network/HTTP/FlowHTTPClient.swift:246:	) async throws -> Flow.Account {
+Sources/Network/HTTP/FlowHTTPClient.swift:248:			Flow.AccessEndpoint.getAccountByBlockHeight(address: address, height: height)
+Sources/Network/HTTP/FlowHTTPClient.swift:252:public func executeScriptAtLatestBlock(
+Sources/Network/HTTP/FlowHTTPClient.swift:255:		blockStatus: Flow.BlockStatus
+Sources/Network/HTTP/FlowHTTPClient.swift:262:			Flow.AccessEndpoint.executeScriptAtLatestBlock(
+Sources/Network/HTTP/FlowHTTPClient.swift:270:	public func executeScriptAtBlockId(
+Sources/Network/HTTP/FlowHTTPClient.swift:280:			Flow.AccessEndpoint.executeScriptAtBlockId(
+Sources/Network/HTTP/FlowHTTPClient.swift:288:	public func executeScriptAtBlockHeight(
+Sources/Network/HTTP/FlowHTTPClient.swift:298:			Flow.AccessEndpoint.executeScriptAtBlockHeight(
+Sources/Network/HTTP/FlowHTTPClient.swift:315:	public func getEventsForBlockIds(
+Sources/Network/HTTP/FlowHTTPClient.swift:320:			Flow.AccessEndpoint.getEventsForBlockIds(type: type, ids: ids)
+Sources/Network/HTTP/Target.swift:3:	//  CadenceTypeTest
+Sources/Network/HTTP/AccessEndpoint.swift:14:		case getBlockHeaderByHeight(height: UInt64)
+Sources/Network/HTTP/AccessEndpoint.swift:15:		case getBlockHeaderById(id: Flow.ID)
+Sources/Network/HTTP/AccessEndpoint.swift:16:		case getLatestBlockHeader(blockStatus: Flow.BlockStatus)
+Sources/Network/HTTP/AccessEndpoint.swift:17:		case getLatestBlock(blockStatus: Flow.BlockStatus)
+Sources/Network/HTTP/AccessEndpoint.swift:18:		case getBlockById(id: Flow.ID)
+Sources/Network/HTTP/AccessEndpoint.swift:19:		case getBlockByHeight(height: UInt64)
+Sources/Network/HTTP/AccessEndpoint.swift:21:		case sendTransaction(transaction: Flow.Transaction)
+Sources/Network/HTTP/AccessEndpoint.swift:22:		case getTransactionById(id: Flow.ID)
+Sources/Network/HTTP/AccessEndpoint.swift:23:		case getTransactionResultById(id: Flow.ID)
+Sources/Network/HTTP/AccessEndpoint.swift:24:		case getAccountAtLatestBlock(address: Flow.Address, blockStatus: Flow.BlockStatus)
+Sources/Network/HTTP/AccessEndpoint.swift:25:		case getAccountByBlockHeight(address: Flow.Address, height: UInt64)
+Sources/Network/HTTP/AccessEndpoint.swift:26:		case executeScriptAtLatestBlock(
+Sources/Network/HTTP/AccessEndpoint.swift:29:			blockStatus: Flow.BlockStatus
+Sources/Network/HTTP/AccessEndpoint.swift:31:		case executeScriptAtBlockId(
+Sources/Network/HTTP/AccessEndpoint.swift:36:		case executeScriptAtBlockHeight(
+Sources/Network/HTTP/AccessEndpoint.swift:42:		case getEventsForBlockIds(type: String, ids: Set<Flow.ID>)
+Sources/Network/HTTP/AccessEndpoint.swift:53:			case let .getLatestBlockHeader(blockStatus):
+Sources/Network/HTTP/AccessEndpoint.swift:56:			case let .getBlockHeaderByHeight(height):
+Sources/Network/HTTP/AccessEndpoint.swift:59:			case .getBlockById:
+Sources/Network/HTTP/AccessEndpoint.swift:62:			case let .getBlockByHeight(height):
+Sources/Network/HTTP/AccessEndpoint.swift:70:			case let .getLatestBlock(blockStatus):
+Sources/Network/HTTP/AccessEndpoint.swift:78:			case let .getAccountAtLatestBlock(_, blockStatus):
+Sources/Network/HTTP/AccessEndpoint.swift:86:			case let .getAccountByBlockHeight(_, height):
+Sources/Network/HTTP/AccessEndpoint.swift:97:			case let .executeScriptAtLatestBlock(script, arguments, blockStatus):
+Sources/Network/HTTP/AccessEndpoint.swift:103:			case let .executeScriptAtBlockHeight(script, height, arguments):
+Sources/Network/HTTP/AccessEndpoint.swift:109:			case let .executeScriptAtBlockId(script, id, arguments):
+Sources/Network/HTTP/AccessEndpoint.swift:115:			case let .sendTransaction(tx):
+Sources/Network/HTTP/AccessEndpoint.swift:127:			case let .getEventsForBlockIds(type, ids):
+Sources/Network/HTTP/AccessEndpoint.swift:143:					.getBlockByHeight,
+Sources/Network/HTTP/AccessEndpoint.swift:144:					.getBlockHeaderById,
+Sources/Network/HTTP/AccessEndpoint.swift:148:			case .sendTransaction,
+Sources/Network/HTTP/AccessEndpoint.swift:149:					.executeScriptAtBlockHeight,
+Sources/Network/HTTP/AccessEndpoint.swift:150:					.executeScriptAtLatestBlock,
+Sources/Network/HTTP/AccessEndpoint.swift:151:					.executeScriptAtBlockId:
+Sources/Network/HTTP/AccessEndpoint.swift:171:					.getLatestBlockHeader,
+Sources/Network/HTTP/AccessEndpoint.swift:172:					.getBlockByHeight,
+Sources/Network/HTTP/AccessEndpoint.swift:173:					.getLatestBlock:
+Sources/Network/HTTP/AccessEndpoint.swift:179:			case let .getBlockHeaderById(id):
+Sources/Network/HTTP/AccessEndpoint.swift:182:			case let .getBlockById(id):
+Sources/Network/HTTP/AccessEndpoint.swift:185:			case let .getAccountAtLatestBlock(address, _):
+Sources/Network/HTTP/AccessEndpoint.swift:188:			case let .getAccountByBlockHeight(address, _):
+Sources/Network/HTTP/AccessEndpoint.swift:191:			case let .getTransactionResultById(id):
+Sources/Network/HTTP/AccessEndpoint.swift:194:			case let .getTransactionById(id):
+Sources/Network/HTTP/AccessEndpoint.swift:200:			case .executeScriptAtLatestBlock,
+Sources/Network/HTTP/AccessEndpoint.swift:201:					.executeScriptAtBlockId,
+Sources/Network/HTTP/AccessEndpoint.swift:202:					.executeScriptAtBlockHeight:
+Sources/Network/HTTP/AccessEndpoint.swift:205:			case .sendTransaction:
+Sources/Network/HTTP/AccessEndpoint.swift:208:			case .getEventsForBlockIds,
+Sources/Network/HTTP/FlowHTTPModel.swift:3:	//  CadenceTypeTest
+Sources/Network/HTTP/FlowHTTPModel.swift:31:	struct BlockHeaderResponse: Codable, Sendable {
+Sources/Network/HTTP/FlowHTTPModel.swift:32:		let header: Flow.BlockHeader
+Sources/Network/HTTP/FlowHTTPModel.swift:39:	struct BlockResponse: Codable, Sendable {
+Sources/Network/HTTP/FlowHTTPModel.swift:40:		let header: Flow.BlockHeader
+Sources/Network/HTTP/FlowHTTPModel.swift:41:		let payload: BlockPayloadResponse
+Sources/Network/HTTP/FlowHTTPModel.swift:43:		func toFlowBlock() -> Flow.Block {
+Sources/Network/HTTP/FlowHTTPModel.swift:56:	struct BlockPayloadResponse: Codable, Sendable {
+Sources/Network/HTTP/FlowHTTPModel.swift:58:		let blockSeals: [BlockSeal]
+Sources/Network/HTTP/FlowHTTPModel.swift:73:	struct TransactionIdResponse: Codable, Sendable {
+Sources/Network/FlowAccessProtocol.swift:2:	//  FlowAccessProtocol.swift
+Sources/Network/FlowAccessProtocol.swift:3:	//  CadenceTypeTest
+Sources/Network/FlowAccessProtocol.swift:30:	/// - Block queries
+Sources/Network/FlowAccessProtocol.swift:31:	/// - Account information
+Sources/Network/FlowAccessProtocol.swift:32:	/// - Transaction submission
+Sources/Network/FlowAccessProtocol.swift:40:public protocol FlowAccessProtocol: Sendable {
+Sources/Network/FlowAccessProtocol.swift:47:	func getLatestBlockHeader(
+Sources/Network/FlowAccessProtocol.swift:48:		blockStatus: Flow.BlockStatus
+Sources/Network/FlowAccessProtocol.swift:49:	) async throws -> Flow.BlockHeader
+Sources/Network/FlowAccessProtocol.swift:52:		/// - Parameter id: Block identifier
+Sources/Network/FlowAccessProtocol.swift:53:		/// - Returns: Block header for specified ID
+Sources/Network/FlowAccessProtocol.swift:54:	func getBlockHeaderById(id: Flow.ID) async throws -> Flow.BlockHeader
+Sources/Network/FlowAccessProtocol.swift:56:	func getBlockHeaderByHeight(height: UInt64) async throws -> Flow.BlockHeader
+Sources/Network/FlowAccessProtocol.swift:58:	func getLatestBlock(blockStatus: Flow.BlockStatus) async throws -> Flow.Block
+Sources/Network/FlowAccessProtocol.swift:60:	func getBlockById(id: Flow.ID) async throws -> Flow.Block
+Sources/Network/FlowAccessProtocol.swift:62:	func getBlockByHeight(height: UInt64) async throws -> Flow.Block
+Sources/Network/FlowAccessProtocol.swift:66:	func sendTransaction(transaction: Flow.Transaction) async throws -> Flow.ID
+Sources/Network/FlowAccessProtocol.swift:68:	func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction
+Sources/Network/FlowAccessProtocol.swift:70:	func getTransactionResultById(id: Flow.ID) async throws -> Flow.TransactionResult
+Sources/Network/FlowAccessProtocol.swift:72:	func getAccountAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:73:		address: Flow.Address,
+Sources/Network/FlowAccessProtocol.swift:74:		blockStatus: Flow.BlockStatus
+Sources/Network/FlowAccessProtocol.swift:75:	) async throws -> Flow.Account
+Sources/Network/FlowAccessProtocol.swift:77:	func getAccountByBlockHeight(
+Sources/Network/FlowAccessProtocol.swift:78:		address: Flow.Address,
+Sources/Network/FlowAccessProtocol.swift:80:	) async throws -> Flow.Account
+Sources/Network/FlowAccessProtocol.swift:82:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:85:		blockStatus: Flow.BlockStatus
+Sources/Network/FlowAccessProtocol.swift:88:	func executeScriptAtBlockId(
+Sources/Network/FlowAccessProtocol.swift:94:	func executeScriptAtBlockHeight(
+Sources/Network/FlowAccessProtocol.swift:105:	func getEventsForBlockIds(
+Sources/Network/FlowAccessProtocol.swift:117:public extension FlowAccessProtocol {
+Sources/Network/FlowAccessProtocol.swift:119:		// Accounts
+Sources/Network/FlowAccessProtocol.swift:121:	func getAccountAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:123:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccessProtocol.swift:124:	) async throws -> Flow.Account {
+Sources/Network/FlowAccessProtocol.swift:125:		try await getAccountAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:131:		// Transactions
+Sources/Network/FlowAccessProtocol.swift:133:	func getTransactionById(id: String) async throws -> Flow.Transaction {
+Sources/Network/FlowAccessProtocol.swift:134:		try await getTransactionById(id: .init(hex: id))
+Sources/Network/FlowAccessProtocol.swift:137:	func getTransactionResultById(id: String) async throws -> Flow.TransactionResult {
+Sources/Network/FlowAccessProtocol.swift:138:		try await getTransactionResultById(id: .init(hex: id))
+Sources/Network/FlowAccessProtocol.swift:141:	func getLatestBlock(sealed: Bool = true) async throws -> Flow.Block {
+Sources/Network/FlowAccessProtocol.swift:143:		try await getLatestBlock(blockStatus: .final)
+Sources/Network/FlowAccessProtocol.swift:148:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:151:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccessProtocol.swift:153:		try await executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:160:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:162:		arguments: [Flow.Cadence.FValue] = [],
+Sources/Network/FlowAccessProtocol.swift:163:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccessProtocol.swift:165:		try await executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:172:	func executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:174:		arguments: [Flow.Cadence.FValue],
+Sources/Network/FlowAccessProtocol.swift:175:		blockStatus: Flow.BlockStatus = .final
+Sources/Network/FlowAccessProtocol.swift:177:		try await executeScriptAtLatestBlock(
+Sources/Network/FlowAccessProtocol.swift:186:	func executeScriptAtBlockId(
+Sources/Network/FlowAccessProtocol.swift:189:		arguments: [Flow.Cadence.FValue]
+Sources/Network/FlowAccessProtocol.swift:191:		try await executeScriptAtBlockId(
+Sources/Network/FlowAccessProtocol.swift:200:	func executeScriptAtBlockHeight(
+Sources/Network/FlowAccessProtocol.swift:203:		arguments: [Flow.Cadence.FValue]
+Sources/Network/FlowAccessProtocol.swift:205:		try await executeScriptAtBlockHeight(
+Sources/Network/FlowConnectionState.swift:6:	//  Refactored to remove Combine and rely on FlowActor isolation.
+Sources/Network/FlowConnectionState.swift:12:@FlowActor
+Sources/Models/FlowKind.swift:24:public extension Flow.Cadence {
+Sources/Models/FlowKind.swift:26:		let kind: Flow.Cadence.FType
+Sources/Models/FlowEvent.swift:68:				/// Block ID where event occurred.
+Sources/Models/FlowEvent.swift:71:				/// Block height.
+Sources/Models/FlowEvent.swift:98:			/// Raw Cadence payload and decoded argument fields.
+Sources/Models/FlowEvent.swift:178:// MARK: - TransactionResult helpers
+Sources/Models/FlowEvent.swift:180:extension Flow.TransactionResult {
+Sources/Models/FlowEvent.swift:185:	public func getCreatedAddress() -> String? {
+Sources/Models/FlowTransaction+Signer.swift:2:	//  FlowTransaction + Signer
+Sources/Models/FlowTransaction+Signer.swift:19:	/// Flow Transaction Signing
+Sources/Models/FlowTransaction+Signer.swift:27:	/// 3. Signature aggregation and validation
+Sources/Models/FlowTransaction+Signer.swift:31:	/// var transaction = unsignedTransaction
+Sources/Models/FlowTransaction+Signer.swift:38:		/// Sign the unsigned transaction with a list of `FlowSigner`
+Sources/Models/FlowTransaction+Signer.swift:40:		///     - unsignedTransaction: The transaction to be signed
+Sources/Models/FlowTransaction+Signer.swift:41:		///     - signers: A list of `FlowSigner` to sign the transaction
+Sources/Models/FlowTransaction+Signer.swift:43:	@FlowActor func signTransaction(unsignedTransaction: Flow.Transaction, signers: [FlowSigner]) async throws -> Flow.Transaction {
+Sources/Models/FlowTransaction+Signer.swift:44:		var tx = unsignedTransaction
+Sources/Models/FlowTransaction+Signer.swift:49:public extension Flow.Transaction {
+Sources/Models/FlowTransaction+Signer.swift:52:		/// - Returns: Transaction with payload signatures
+Sources/Models/FlowTransaction+Signer.swift:55:	mutating func signPayload(signers: [FlowSigner]) async throws -> Flow.Transaction {
+Sources/Models/FlowTransaction+Signer.swift:60:		func findSigners(address: Flow.Address, signers: [FlowSigner]) -> [FlowSigner]? {
+Sources/Models/FlowTransaction+Signer.swift:67:			guard let signers = findSigners(address: proposalKey.address, signers: signers) else {
+Sources/Models/FlowTransaction+Signer.swift:68:				throw Flow.FError.missingSigner
+Sources/Models/FlowTransaction+Signer.swift:72:				addPayloadSignature(
+Sources/Models/FlowTransaction+Signer.swift:90:			guard let signers = findSigners(address: authorizer, signers: signers) else {
+Sources/Models/FlowTransaction+Signer.swift:91:				throw Flow.FError.missingSigner
+Sources/Models/FlowTransaction+Signer.swift:96:				addPayloadSignature(
+Sources/Models/FlowTransaction+Signer.swift:109:		/// - Returns: Transaction with envelope signatures
+Sources/Models/FlowTransaction+Signer.swift:112:	mutating func signEnvelope(signers: [FlowSigner]) async throws -> Flow.Transaction {
+Sources/Models/FlowTransaction+Signer.swift:117:		func findSigners(address: Flow.Address, signers: [FlowSigner]) -> [FlowSigner]? {
+Sources/Models/FlowTransaction+Signer.swift:121:		guard let signers = findSigners(address: payer, signers: signers) else {
+Sources/Models/FlowTransaction+Signer.swift:122:			throw Flow.FError.missingSigner
+Sources/Models/FlowTransaction+Signer.swift:128:			addEnvelopeSignature(
+Sources/Models/FlowTransaction+Signer.swift:137:		/// Sign (Mutate) unsigned Flow Transaction with a list of `FlowSigner`
+Sources/Models/FlowTransaction+Signer.swift:139:		///     - signers: A list of `FlowSigner` to sign the transaction
+Sources/Models/FlowTransaction+Signer.swift:140:		/// - returns: The `Flow.Transaction` itself.
+Sources/Models/FlowTransaction+Signer.swift:142:	mutating func sign(signers: [FlowSigner]) async throws -> Flow.Transaction {
+Sources/Models/FlowId.swift:67:		/// Currently implemented via HTTP polling; WebSocket streaming can be reintroduced
+Sources/Models/FlowId.swift:68:		/// by extending FlowWebSocketCenter later.
+Sources/Models/FlowId.swift:70:		status desiredStatus: Flow.Transaction.Status,
+Sources/Models/FlowId.swift:72:	) async throws -> Flow.TransactionResult {
+Sources/Models/FlowId.swift:74:		let api = await FlowActors.access.currentClient
+Sources/Models/FlowId.swift:78:			let result = try await api.getTransactionResultById(id: self)
+Sources/Models/FlowSignature.swift:2:	//  FlowSignature
+Sources/Models/FlowSignature.swift:23:	struct Signature: FlowEntity, Equatable, Codable, Sendable {
+Sources/Models/FlowSignature.swift:36:extension Flow.Signature: CustomStringConvertible {
+Sources/Models/FlowAlgorithm.swift:27:	enum SignatureAlgorithm: String, CaseIterable, Codable, Sendable {
+Sources/Models/FlowAlgorithm.swift:86:			self = SignatureAlgorithm.allCases.first { $0.code == code } ?? .unknown
+Sources/Models/FlowAlgorithm.swift:90:			self = SignatureAlgorithm.allCases.first { $0.index == index } ?? .unknown
+Sources/Models/FlowAddress.swift:2:	//  FlowAddress
+Sources/Models/FlowAddress.swift:21:	/// Flow Address Model
+Sources/Models/FlowAddress.swift:28:	/// - Address validation
+Sources/Models/FlowAddress.swift:34:	/// let address = Flow.Address(hex: "0x1234")
+Sources/Models/FlowAddress.swift:35:	/// let account = try await flow.getAccountAtLatestBlock(address: address)
+Sources/Models/FlowAddress.swift:42:		/// Flow Address Model
+Sources/Models/FlowAddress.swift:46:	struct Address: FlowEntity, Equatable, Hashable, Codable, CustomStringConvertible {
+Sources/Models/FlowAddress.swift:70:			if data.bytes.count == Flow.Address.byteLength {
+Sources/Models/FlowAddress.swift:74:					.paddingZeroLeft(blockSize: Flow.Address.byteLength)
+Sources/Models/FlowAddress.swift:75:					.prefix(Flow.Address.byteLength)
+Sources/Models/FlowTransaction.swift:2:	//  FlowTransaction
+Sources/Models/FlowTransaction.swift:25:		/// The data structure of Transaction
+Sources/Models/FlowTransaction.swift:26:	struct Transaction: Sendable {
+Sources/Models/FlowTransaction.swift:34:		public var referenceBlockId: ID
+Sources/Models/FlowTransaction.swift:41:		public var proposalKey: TransactionProposalKey
+Sources/Models/FlowTransaction.swift:44:		public var payer: Address
+Sources/Models/FlowTransaction.swift:47:		public var authorizers: [Address]
+Sources/Models/FlowTransaction.swift:50:		public var payloadSignatures: [TransactionSignature] = []
+Sources/Models/FlowTransaction.swift:53:		public var envelopeSignatures: [TransactionSignature] = []
+Sources/Models/FlowTransaction.swift:58:			referenceBlockId: Flow.ID,
+Sources/Models/FlowTransaction.swift:60:			proposalKey: Flow.TransactionProposalKey,
+Sources/Models/FlowTransaction.swift:61:			payer: Flow.Address,
+Sources/Models/FlowTransaction.swift:62:			authorizers: [Flow.Address],
+Sources/Models/FlowTransaction.swift:63:			payloadSignatures: [Flow.TransactionSignature] = [],
+Sources/Models/FlowTransaction.swift:64:			envelopeSignatures: [Flow.TransactionSignature] = []
+Sources/Models/FlowTransaction.swift:68:			self.referenceBlockId = referenceBlockId
+Sources/Models/FlowTransaction.swift:73:			self.payloadSignatures = payloadSignatures
+Sources/Models/FlowTransaction.swift:74:			self.envelopeSignatures = envelopeSignatures
+Sources/Models/FlowTransaction.swift:80:			referenceBlockId: Flow.ID,
+Sources/Models/FlowTransaction.swift:82:			proposalKey: Flow.TransactionProposalKey,
+Sources/Models/FlowTransaction.swift:83:			payer: Flow.Address,
+Sources/Models/FlowTransaction.swift:84:			authorizers: [Flow.Address],
+Sources/Models/FlowTransaction.swift:85:			payloadSignatures: [Flow.TransactionSignature] = [],
+Sources/Models/FlowTransaction.swift:86:			envelopeSignatures: [Flow.TransactionSignature] = []
+Sources/Models/FlowTransaction.swift:90:			self.referenceBlockId = referenceBlockId
+Sources/Models/FlowTransaction.swift:95:			self.payloadSignatures = payloadSignatures
+Sources/Models/FlowTransaction.swift:96:			self.envelopeSignatures = envelopeSignatures
+Sources/Models/FlowTransaction.swift:102:			referenceBlockId: Flow.ID? = nil,
+Sources/Models/FlowTransaction.swift:104:			proposalKey: Flow.TransactionProposalKey? = nil,
+Sources/Models/FlowTransaction.swift:105:			payer: Flow.Address? = nil,
+Sources/Models/FlowTransaction.swift:106:			authorizers: [Flow.Address]? = nil,
+Sources/Models/FlowTransaction.swift:107:			payloadSignatures: [Flow.TransactionSignature]? = nil,
+Sources/Models/FlowTransaction.swift:108:			envelopeSignatures: [Flow.TransactionSignature]? = nil
+Sources/Models/FlowTransaction.swift:109:		) -> Transaction {
+Sources/Models/FlowTransaction.swift:110:			Transaction(
+Sources/Models/FlowTransaction.swift:113:				referenceBlockId: referenceBlockId ?? self.referenceBlockId,
+Sources/Models/FlowTransaction.swift:118:				payloadSignatures: payloadSignatures ?? self.payloadSignatures,
+Sources/Models/FlowTransaction.swift:119:				envelopeSignatures: envelopeSignatures ?? self.envelopeSignatures
+Sources/Models/FlowTransaction.swift:134:			/// RLP Encoded data of Envelope with `DomainTag.transaction` prefix
+Sources/Models/FlowTransaction.swift:137:			return DomainTag.transaction.normalize + data
+Sources/Models/FlowTransaction.swift:151:			/// RLP Encoded data of Payload with `DomainTag.transaction` prefix
+Sources/Models/FlowTransaction.swift:154:			return DomainTag.transaction.normalize + data
+Sources/Models/FlowTransaction.swift:157:		var payload: Transaction.Payload {
+Sources/Models/FlowTransaction.swift:158:			Flow.Transaction.Payload(
+Sources/Models/FlowTransaction.swift:161:				referenceBlockId: referenceBlockId.data.paddingZeroLeft(blockSize: 32),
+Sources/Models/FlowTransaction.swift:163:				proposalKeyAddress: proposalKey.address.data.paddingZeroLeft(blockSize: 8),
+Sources/Models/FlowTransaction.swift:172:			let signatures = payloadSignatures
+Sources/Models/FlowTransaction.swift:174:					EnvelopeSignature(
+Sources/Models/FlowTransaction.swift:181:			return PayloadEnvelope(payload: payload, payloadSignatures: signatures)
+Sources/Models/FlowTransaction.swift:184:		private var signers: [Address: Int] {
+Sources/Models/FlowTransaction.swift:186:			var signer = [Address: Int]()
+Sources/Models/FlowTransaction.swift:188:			func addSigner(address: Address) {
+Sources/Models/FlowTransaction.swift:194:			addSigner(address: proposalKey.address)
+Sources/Models/FlowTransaction.swift:195:			addSigner(address: payer)
+Sources/Models/FlowTransaction.swift:196:			authorizers.forEach { addSigner(address: $0) }
+Sources/Models/FlowTransaction.swift:204:		public mutating func addPayloadSignature(_ signature: TransactionSignature) {
+Sources/Models/FlowTransaction.swift:205:			payloadSignatures.append(signature)
+Sources/Models/FlowTransaction.swift:206:			payloadSignatures = payloadSignatures.sorted(by: <)
+Sources/Models/FlowTransaction.swift:209:		public mutating func addPayloadSignature(address: Address, keyIndex: Int, signature: Data) {
+Sources/Models/FlowTransaction.swift:211:			for sig in payloadSignatures {
+Sources/Models/FlowTransaction.swift:217:			payloadSignatures.append(
+Sources/Models/FlowTransaction.swift:218:				TransactionSignature(
+Sources/Models/FlowTransaction.swift:225:			payloadSignatures = payloadSignatures.sorted(by: <)
+Sources/Models/FlowTransaction.swift:228:		public mutating func addEnvelopeSignature(address: Address, keyIndex: Int, signature: Data) {
+Sources/Models/FlowTransaction.swift:230:			for sig in envelopeSignatures {
+Sources/Models/FlowTransaction.swift:236:			envelopeSignatures.append(
+Sources/Models/FlowTransaction.swift:237:				TransactionSignature(
+Sources/Models/FlowTransaction.swift:244:			envelopeSignatures = envelopeSignatures.sorted(by: <)
+Sources/Models/FlowTransaction.swift:247:		public mutating func addEnvelopeSignature(_ signature: TransactionSignature) {
+Sources/Models/FlowTransaction.swift:248:			envelopeSignatures.append(signature)
+Sources/Models/FlowTransaction.swift:249:			envelopeSignatures = envelopeSignatures.sorted(by: <)
+Sources/Models/FlowTransaction.swift:252:		func getSingerIndex(address: Flow.Address) -> Int? {
+Sources/Models/FlowTransaction.swift:262:extension Flow.Transaction {
+Sources/Models/FlowTransaction.swift:303:		public static func < (lhs: Flow.Transaction.Status, rhs: Flow.Transaction.Status) -> Bool {
+Sources/Models/FlowTransaction.swift:312:		let referenceBlockId: Data
+Sources/Models/FlowTransaction.swift:314:		let proposalKeyAddress: Data
+Sources/Models/FlowTransaction.swift:329:		var payloadSignatures: [EnvelopeSignature]
+Sources/Models/FlowTransaction.swift:332:			[payload.rlpList, payloadSignatures.compactMap { sig in [sig.signerIndex, sig.keyIndex, sig.signature] }]
+Sources/Models/FlowTransaction.swift:336:	public struct EnvelopeSignature: Comparable, Equatable, Sendable {
+Sources/Models/FlowTransaction.swift:341:		public static func < (lhs: Flow.Transaction.EnvelopeSignature, rhs: Flow.Transaction.EnvelopeSignature) -> Bool {
+Sources/Models/FlowTransaction.swift:351:		var envelopeSignatures: [EnvelopeSignature]
+Sources/Models/FlowTransaction.swift:358:	struct TransactionResult: Codable, Sendable {
+Sources/Models/FlowTransaction.swift:360:		public let status: Transaction.Status
+Sources/Models/FlowTransaction.swift:387:			status: Transaction.Status,
+Sources/Models/FlowTransaction.swift:404:			status = try container.decode(Flow.Transaction.Status.self, forKey: .status)
+Sources/Models/FlowTransaction.swift:429:	struct TransactionProposalKey: Sendable {
+Sources/Models/FlowTransaction.swift:431:		public let address: Address
+Sources/Models/FlowTransaction.swift:441:		public init(address: Flow.Address, keyIndex: Int = 0) {
+Sources/Models/FlowTransaction.swift:447:		public init(address: Flow.Address, keyIndex: Int = 0, sequenceNumber: Int64 = -1) {
+Sources/Models/FlowTransaction.swift:454:	struct TransactionSignature: Comparable, Sendable {
+Sources/Models/FlowTransaction.swift:456:		public let address: Address
+Sources/Models/FlowTransaction.swift:461:			/// Signature Data
+Sources/Models/FlowTransaction.swift:467:		public init(address: Flow.Address, keyIndex: Int, signature: Data) {
+Sources/Models/FlowTransaction.swift:474:		public  init(address: Flow.Address, signerIndex: Int, keyIndex: Int, signature: Data) {
+Sources/Models/FlowTransaction.swift:481:		public static func < (lhs: Flow.TransactionSignature, rhs: Flow.TransactionSignature) -> Bool {
+Sources/Models/FlowTransaction.swift:489:			address: Flow.Address? = nil,
+Sources/Models/FlowTransaction.swift:493:		) -> TransactionSignature {
+Sources/Models/FlowTransaction.swift:494:			TransactionSignature(
+Sources/Models/FlowTransaction.swift:504:extension Flow.TransactionProposalKey: Codable {
+Sources/Models/FlowTransaction.swift:520:		address = try container.decode(Flow.Address.self, forKey: .address)
+Sources/Models/FlowTransaction.swift:528:extension Flow.TransactionSignature: Codable {
+Sources/Models/FlowTransaction.swift:544:		address = try container.decode(Flow.Address.self, forKey: .address)
+Sources/Models/FlowBlock.swift:2:	//  FlowBlock.swift
+Sources/Models/FlowBlock.swift:23:	/// Flow Block Model
+Sources/Models/FlowBlock.swift:29:	/// - Block identification
+Sources/Models/FlowBlock.swift:30:	/// - Transaction inclusion
+Sources/Models/FlowBlock.swift:36:	/// let block = try await flow.getBlockByHeight(height: 12345)
+Sources/Models/FlowBlock.swift:37:	/// print("Block ID: \(block.id)")
+Sources/Models/FlowBlock.swift:41:		/// Brief information of `Flow.Block`.
+Sources/Models/FlowBlock.swift:42:	struct BlockHeader: Codable, Sendable {
+Sources/Models/FlowBlock.swift:79:		/// The data structure of `Flow.Block` which is `sealed`.
+Sources/Models/FlowBlock.swift:80:	struct BlockSeal: Codable, Sendable {
+Sources/Models/FlowBlock.swift:83:		public let executionReceiptSignatures: [Signature]?
+Sources/Models/FlowBlock.swift:84:		public let resultApprovalSignatures: [Signature]?
+Sources/Models/FlowBlock.swift:94:			executionReceiptSignatures: [Flow.Signature]? = nil,
+Sources/Models/FlowBlock.swift:95:			resultApprovalSignatures: [Flow.Signature]? = nil
+Sources/Models/FlowBlock.swift:99:			self.executionReceiptSignatures = executionReceiptSignatures
+Sources/Models/FlowBlock.swift:100:			self.resultApprovalSignatures = resultApprovalSignatures
+Sources/Models/FlowBlock.swift:107:			executionReceiptSignatures = nil
+Sources/Models/FlowBlock.swift:108:			resultApprovalSignatures = nil
+Sources/Models/FlowBlock.swift:113:	struct Block: Codable, Sendable {
+Sources/Models/FlowBlock.swift:132:		public var blockSeals: [BlockSeal]
+Sources/Models/FlowBlock.swift:135:		public var signatures: [Signature]?
+Sources/Models/FlowBlock.swift:143:			blockSeals: [Flow.BlockSeal],
+Sources/Models/FlowBlock.swift:144:			signatures: [Flow.Signature]? = nil
+Sources/Models/FlowDomainTag.swift:2:	//  FlowDomainTag
+Sources/Models/FlowDomainTag.swift:24:	enum DomainTag: Sendable {
+Sources/Models/FlowDomainTag.swift:56:			self = [DomainTag.user, DomainTag.transaction].first { $0.rawValue == rawValue } ?? .custom(rawValue)
+Sources/Models/FlowTransaction+Codable.swift:2:	//  CadenceTypeTest
+Sources/Models/FlowTransaction+Codable.swift:19:	/// Flow Transaction Encoding/Decoding
+Sources/Models/FlowTransaction+Codable.swift:27:	/// - Signature formatting
+Sources/Models/FlowTransaction+Codable.swift:28:	/// - Block reference encoding
+Sources/Models/FlowTransaction+Codable.swift:34:extension Flow.Transaction: Codable {
+Sources/Models/FlowTransaction+Codable.swift:39:			/// Transaction arguments
+Sources/Models/FlowTransaction+Codable.swift:42:		case referenceBlockId
+Sources/Models/FlowTransaction+Codable.swift:45:			/// Transaction proposer details
+Sources/Models/FlowTransaction+Codable.swift:52:		case payloadSignatures
+Sources/Models/FlowTransaction+Codable.swift:54:		case envelopeSignatures
+Sources/Models/FlowTransaction+Codable.swift:64:		try container.encode(referenceBlockId, forKey: .referenceBlockId)
+Sources/Models/FlowTransaction+Codable.swift:69:		try container.encode(payloadSignatures, forKey: .payloadSignatures)
+Sources/Models/FlowTransaction+Codable.swift:70:		try container.encode(envelopeSignatures, forKey: .envelopeSignatures)
+Sources/Models/FlowTransaction+Codable.swift:82:		referenceBlockId = try container.decode(Flow.ID.self, forKey: .referenceBlockId)
+Sources/Models/FlowTransaction+Codable.swift:85:		proposalKey = try container.decode(Flow.TransactionProposalKey.self, forKey: .proposalKey)
+Sources/Models/FlowTransaction+Codable.swift:86:		payer = try container.decode(Flow.Address.self, forKey: .payer)
+Sources/Models/FlowTransaction+Codable.swift:87:		authorizers = try container.decode([Flow.Address].self, forKey: .authorizers)
+Sources/Models/FlowTransaction+Codable.swift:88:		payloadSignatures = try container.decode([Flow.TransactionSignature].self, forKey: .payloadSignatures)
+Sources/Models/FlowTransaction+Codable.swift:89:		envelopeSignatures = try container.decode([Flow.TransactionSignature].self, forKey: .envelopeSignatures)
+Sources/Models/FlowChainId.swift:105:		public var defaultWebSocketNode: Flow.Transport? {
+Sources/Models/FlowArgument.swift:12:		/// The argument for Cadence code for encoding and decoding.
+Sources/Models/FlowArgument.swift:14:			/// The type of the argument in `Flow.Cadence.FType`.
+Sources/Models/FlowArgument.swift:15:		public let type: Cadence.FType
+Sources/Models/FlowArgument.swift:17:			/// The value of the argument in `Flow.Cadence.FValue`.
+Sources/Models/FlowArgument.swift:18:		public let value: Cadence.FValue
+Sources/Models/FlowArgument.swift:27:			/// but avoids a `@FlowActor`-isolated access from a nonisolated context.
+Sources/Models/FlowArgument.swift:41:		public init(type: Cadence.FType, value: Flow.Cadence.FValue) {
+Sources/Models/FlowArgument.swift:46:			/// Initial argument with value in `Flow.Cadence.FValue` type.
+Sources/Models/FlowArgument.swift:47:		public init(value: Flow.Cadence.FValue) {
+Sources/Models/FlowArgument.swift:80:			type = try container.decode(Cadence.FType.self, forKey: .type)
+Sources/Models/FlowArgument.swift:178:					value = .address(Flow.Address(hex: s))
+Sources/Models/FlowArgument.swift:277:			public init(name: String, value: Flow.Cadence.FValue) {
+Sources/Models/FlowArgument.swift:303:		public init(key: Flow.Cadence.FValue, value: Flow.Cadence.FValue) {
+Sources/Models/FlowArgument.swift:327:		public let staticType: Flow.Cadence.Kind
+Sources/Models/FlowArgument.swift:329:		public init(staticType: Flow.Cadence.Kind) {
+Sources/Models/FlowCollection.swift:38:			public let signatures: [Signature]
+Sources/Models/FlowCollection.swift:53:			public init(id: Flow.ID, signatures: [Flow.Signature]) {
+Sources/Models/FlowSigner.swift:2:	//  FlowSigner.swift
+Sources/Models/FlowSigner.swift:24:public protocol FlowSigner: Sendable {
+Sources/Models/FlowSigner.swift:25:		/// Address in the flow blockchain
+Sources/Models/FlowSigner.swift:26:	var address: Flow.Address { get }
+Sources/Models/FlowSigner.swift:36:	func sign(signableData: Data, transaction: Flow.Transaction?) async throws -> Data
+Sources/Models/FlowSigner.swift:39:public extension FlowSigner {
+Sources/Models/FlowCadence.swift:2:	//  FlowCadence
+Sources/Models/FlowCadence.swift:24:	static let accountCreationEventType = "flow.AccountCreated"
+Sources/Models/FlowCadence.swift:27:		/// Cadence namespace container.
+Sources/Models/FlowCadence.swift:30:	final class Cadence: @unchecked Sendable {}
+Sources/Models/FlowCadence.swift:33:public extension Flow.Cadence {
+Sources/Models/FlowCadence.swift:34:		/// All the type in Cadence
+Sources/Models/FlowCadence.swift:63:		case address = "Address"
+Sources/Models/FlowCadence.swift:85:		/// Cadence runtime value.
+Sources/Models/FlowCadence.swift:119:		case array([Flow.Cadence.FValue])
+Sources/Models/FlowCadence.swift:120:		case address(Flow.Address)
+Sources/Models/FlowCadence.swift:297:		public static func == (lhs: Flow.Cadence.FValue, rhs: Flow.Cadence.FValue) -> Bool {
+Sources/Models/FlowCadence.swift:403:extension Flow.Cadence.FValue: CustomStringConvertible {
+Sources/Models/FlowCadence.swift:410:extension Flow.Cadence.FValue {
+Sources/Models/FlowCadence.swift:614:	func toOptional() -> Flow.Cadence.FValue? {
+Sources/Models/FlowCadence.swift:651:		/// Convert to `Flow.Address` type, if it's `.address` type
+Sources/Models/FlowCadence.swift:653:		/// - returns: The type of `Flow.Address?` value.
+Sources/Models/FlowCadence.swift:654:	func toAddress() -> Flow.Address? {
+Sources/Models/FlowCadence.swift:684:	func toArray() -> [Flow.Cadence.FValue]? {
+Sources/Models/FlowAccount.swift:1:	// FlowAccount.swift
+Sources/Models/FlowAccount.swift:8:	struct Account:Sendable, Codable {
+Sources/Models/FlowAccount.swift:9:		public let address: Address
+Sources/Models/FlowAccount.swift:11:		public var keys: [AccountKey]
+Sources/Models/FlowAccount.swift:15:			address: Flow.Address,
+Sources/Models/FlowAccount.swift:17:			keys: [Flow.AccountKey],
+Sources/Models/FlowAccount.swift:35:			address = try container.decode(Flow.Address.self, forKey: .address)
+Sources/Models/FlowAccount.swift:41:			keys = try container.decode([Flow.AccountKey].self, forKey: .keys)
+Sources/Models/FlowAccount.swift:47:	struct AccountKey: Codable, Sendable {
+Sources/Models/FlowAccount.swift:52:		public let signAlgo: Flow.SignatureAlgorithm
+Sources/Models/FlowAccount.swift:77:			signAlgo = try container.decode(Flow.SignatureAlgorithm.self, forKey: .signAlgo)
+Sources/Models/FlowAccount.swift:95:			signAlgo: Flow.SignatureAlgorithm,
+Sources/Models/FlowAddressValidation.swift:2://  FlowAddressValidation.swift
+Sources/Models/FlowAddressValidation.swift:8://  Flow+AddressValidation.swift
+Sources/Models/FlowAddressValidation.swift:16:public extension Flow.Address {
+Sources/Models/Signer.swift:2:	//  Signer.swift
+Sources/Models/FlowScript.swift:44:extension Flow.ScriptResponse: @FlowActor FlowDecodable {
+Sources/Models/FlowScript.swift:49:	@FlowActor public func decode<T>(_ decodable: T.Type) throws -> T where T: Decodable {
+Sources/RLP/P256FlowSigner.swift:2:	//  P256FlowSigner.swift
+Sources/RLP/P256FlowSigner.swift:24:public struct P256FlowSigner: FlowSigner {
+Sources/RLP/P256FlowSigner.swift:26:	public let algorithm: Flow.SignatureAlgorithm = .ECDSA_P256
+Sources/RLP/P256FlowSigner.swift:27:	public let address: Flow.Address
+Sources/RLP/P256FlowSigner.swift:34:		address: Flow.Address,
+Sources/RLP/P256FlowSigner.swift:44:		transaction: Flow.Transaction?
+Sources/RLP/P256Signer.swift:2:	//  P256Signer.swift
+Sources/RLP/P256Signer.swift:25:struct ECDSA_P256_Signer: FlowSigner {
+Sources/RLP/P256Signer.swift:26:	var address: Flow.Address
+Sources/RLP/P256Signer.swift:29:	var signatureAlgo: Flow.SignatureAlgorithm = .ECDSA_P256
+Sources/RLP/P256Signer.swift:33:	init(address: Flow.Address, keyIndex: Int, privateKey: P256.Signing.PrivateKey) {
+Sources/RLP/P256Signer.swift:39:	func sign(signableData: Data, transaction _: Flow.Transaction?) throws -> Data {
+Sources/BatchProcessor.swift:32:		// MARK: - Accounts
+Sources/BatchProcessor.swift:34:	public func processAccounts(
+Sources/BatchProcessor.swift:35:		_ addresses: [Flow.Address],
+Sources/BatchProcessor.swift:37:	) async throws -> [Flow.Address: FlowData] {
+Sources/BatchProcessor.swift:42:			try await BatchProcessor.fetchAccountDataStatic(for: address)
+Sources/BatchProcessor.swift:46:	public func processAccountsSafely(
+Sources/BatchProcessor.swift:47:		_ addresses: [Flow.Address],
+Sources/BatchProcessor.swift:49:	) async -> [Flow.Address: Result<FlowData, Error>] {
+Sources/BatchProcessor.swift:54:			try await BatchProcessor.fetchAccountDataStatic(for: address)
+Sources/BatchProcessor.swift:84:		// MARK: - Transactions
+Sources/BatchProcessor.swift:86:	public func sendTransactions<T: Hashable & Sendable>(
+Sources/BatchProcessor.swift:98:	public func sendTransactionsSafely<T: Hashable & Sendable>(
+Sources/BatchProcessor.swift:198:	private static func fetchAccountDataStatic(for address: Flow.Address) async throws -> FlowData {
+Sources/BatchProcessor.swift:200:		let api = await FlowActors.access.currentClient
+Sources/BatchProcessor.swift:201:		let account = try await api.getAccountAtLatestBlock(
+Sources/Actors/FlowTransport.swift:84:		/// Request for `getAccountAtLatestBlock`.
+Sources/Actors/FlowTransport.swift:85:	struct AccountAtLatestBlockRequest: Encodable {
+Sources/Actors/FlowTransport.swift:86:		public let address: Flow.Address
+Sources/Actors/FlowTransport.swift:87:		public let blockStatus: Flow.BlockStatus
+Sources/Actors/FlowTransport.swift:89:		public init(address: Flow.Address, blockStatus: Flow.BlockStatus = .final) {
+Sources/Actors/FlowTransport.swift:95:		/// Request for `getAccountByBlockHeight`.
+Sources/Actors/FlowTransport.swift:96:	struct AccountByBlockHeightRequest: Encodable {
+Sources/Actors/FlowTransport.swift:97:		public let address: Flow.Address
+Sources/Actors/FlowTransport.swift:100:		public init(address: Flow.Address, height: UInt64) {
+Sources/Actors/FlowTransport.swift:106:		/// Request for `executeScriptAtLatestBlock`.
+Sources/Actors/FlowTransport.swift:107:	struct ExecuteScriptAtLatestBlockRequest: Encodable {
+Sources/Actors/FlowTransport.swift:110:		public let blockStatus: Flow.BlockStatus
+Sources/Actors/FlowTransport.swift:115:			blockStatus: Flow.BlockStatus = .final
+Sources/Actors/FlowTransport.swift:123:		/// Request for `executeScriptAtBlockId`.
+Sources/Actors/FlowTransport.swift:124:	struct ExecuteScriptAtBlockIdRequest: Encodable {
+Sources/Actors/FlowTransport.swift:140:		/// Request for `executeScriptAtBlockHeight`.
+Sources/Actors/FlowTransport.swift:141:	struct ExecuteScriptAtBlockHeightRequest: Encodable {
+Sources/Actors/FlowTransport.swift:168:		/// Request for `getEventsForBlockIds`.
+Sources/Actors/FlowTransport.swift:169:	struct EventsForBlockIdsRequest: Encodable {
+Sources/Actors/FlowTransport.swift:186:	case getLatestBlockHeader
+Sources/Actors/FlowTransport.swift:187:	case getBlockHeaderById
+Sources/Actors/FlowTransport.swift:188:	case getBlockHeaderByHeight
+Sources/Actors/FlowTransport.swift:189:	case getLatestBlock
+Sources/Actors/FlowTransport.swift:190:	case getBlockById
+Sources/Actors/FlowTransport.swift:191:	case getBlockByHeight
+Sources/Actors/FlowTransport.swift:193:	case sendTransaction
+Sources/Actors/FlowTransport.swift:194:	case getTransactionById
+Sources/Actors/FlowTransport.swift:195:	case getTransactionResultById
+Sources/Actors/FlowTransport.swift:196:	case getAccountAtLatestBlock
+Sources/Actors/FlowTransport.swift:197:	case getAccountByBlockHeight
+Sources/Actors/FlowTransport.swift:198:	case executeScriptAtLatestBlock
+Sources/Actors/FlowTransport.swift:199:	case executeScriptAtBlockId
+Sources/Actors/FlowTransport.swift:200:	case executeScriptAtBlockHeight
+Sources/Actors/FlowTransport.swift:202:	case getEventsForBlockIds
+Sources/Actors/FlowTransport.swift:241:			case .getLatestBlockHeader:
+Sources/Actors/FlowTransport.swift:242:				guard let status = request as? Flow.BlockStatus else {
+Sources/Actors/FlowTransport.swift:243:					throw invalidRequest(method, expected: Flow.BlockStatus.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:245:				let result = try await httpAPI.getLatestBlockHeader(blockStatus: status)
+Sources/Actors/FlowTransport.swift:248:			case .getBlockHeaderById:
+Sources/Actors/FlowTransport.swift:252:				let result = try await httpAPI.getBlockHeaderById(id: id)
+Sources/Actors/FlowTransport.swift:255:			case .getBlockHeaderByHeight:
+Sources/Actors/FlowTransport.swift:259:				let result = try await httpAPI.getBlockHeaderByHeight(height: height)
+Sources/Actors/FlowTransport.swift:262:			case .getLatestBlock:
+Sources/Actors/FlowTransport.swift:263:				guard let status = request as? Flow.BlockStatus else {
+Sources/Actors/FlowTransport.swift:264:					throw invalidRequest(method, expected: Flow.BlockStatus.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:266:				let result = try await httpAPI.getLatestBlock(blockStatus: status)
+Sources/Actors/FlowTransport.swift:269:			case .getBlockById:
+Sources/Actors/FlowTransport.swift:273:				let result = try await httpAPI.getBlockById(id: id)
+Sources/Actors/FlowTransport.swift:276:			case .getBlockByHeight:
+Sources/Actors/FlowTransport.swift:280:				let result = try await httpAPI.getBlockByHeight(height: height)
+Sources/Actors/FlowTransport.swift:290:			case .sendTransaction:
+Sources/Actors/FlowTransport.swift:291:				guard let tx = request as? Flow.Transaction else {
+Sources/Actors/FlowTransport.swift:292:					throw invalidRequest(method, expected: Flow.Transaction.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:294:				let result = try await httpAPI.sendTransaction(transaction: tx)
+Sources/Actors/FlowTransport.swift:297:			case .getTransactionById:
+Sources/Actors/FlowTransport.swift:301:				let result = try await httpAPI.getTransactionById(id: id)
+Sources/Actors/FlowTransport.swift:304:			case .getTransactionResultById:
+Sources/Actors/FlowTransport.swift:308:				let result = try await httpAPI.getTransactionResultById(id: id)
+Sources/Actors/FlowTransport.swift:311:			case .getAccountAtLatestBlock:
+Sources/Actors/FlowTransport.swift:312:				guard let req = request as? Flow.AccountAtLatestBlockRequest else {
+Sources/Actors/FlowTransport.swift:313:					throw invalidRequest(method, expected: Flow.AccountAtLatestBlockRequest.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:315:				let result = try await httpAPI.getAccountAtLatestBlock(
+Sources/Actors/FlowTransport.swift:321:			case .getAccountByBlockHeight:
+Sources/Actors/FlowTransport.swift:322:				guard let req = request as? Flow.AccountByBlockHeightRequest else {
+Sources/Actors/FlowTransport.swift:323:					throw invalidRequest(method, expected: Flow.AccountByBlockHeightRequest.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:325:				let result = try await httpAPI.getAccountByBlockHeight(
+Sources/Actors/FlowTransport.swift:331:			case .executeScriptAtLatestBlock:
+Sources/Actors/FlowTransport.swift:332:				guard let req = request as? Flow.ExecuteScriptAtLatestBlockRequest else {
+Sources/Actors/FlowTransport.swift:333:					throw invalidRequest(method, expected: Flow.ExecuteScriptAtLatestBlockRequest.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:335:				let result = try await httpAPI.executeScriptAtLatestBlock(
+Sources/Actors/FlowTransport.swift:342:			case .executeScriptAtBlockId:
+Sources/Actors/FlowTransport.swift:343:				guard let req = request as? Flow.ExecuteScriptAtBlockIdRequest else {
+Sources/Actors/FlowTransport.swift:344:					throw invalidRequest(method, expected: Flow.ExecuteScriptAtBlockIdRequest.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:346:				let result = try await httpAPI.executeScriptAtBlockId(
+Sources/Actors/FlowTransport.swift:353:			case .executeScriptAtBlockHeight:
+Sources/Actors/FlowTransport.swift:354:				guard let req = request as? Flow.ExecuteScriptAtBlockHeightRequest else {
+Sources/Actors/FlowTransport.swift:357:						expected: Flow.ExecuteScriptAtBlockHeightRequest.self,
+Sources/Actors/FlowTransport.swift:361:				let result = try await httpAPI.executeScriptAtBlockHeight(
+Sources/Actors/FlowTransport.swift:378:			case .getEventsForBlockIds:
+Sources/Actors/FlowTransport.swift:379:				guard let req = request as? Flow.EventsForBlockIdsRequest else {
+Sources/Actors/FlowTransport.swift:380:					throw invalidRequest(method, expected: Flow.EventsForBlockIdsRequest.self, got: Request.self)
+Sources/Actors/FlowTransport.swift:382:				let result = try await httpAPI.getEventsForBlockIds(
+Sources/Actors/FlowAccessActor.swift:2:	//  FlowAccessActor.swift
+Sources/Actors/FlowAccessActor.swift:10:public actor FlowAccessActor {
+Sources/Actors/FlowAccessActor.swift:11:	public static let shared = FlowAccessActor()
+Sources/Actors/FlowAccessActor.swift:13:	private var client: any FlowAccessProtocol
+Sources/Actors/FlowAccessActor.swift:21:		accessAPI: (any FlowAccessProtocol)? = nil
+Sources/Actors/FlowAccessActor.swift:30:	public var currentClient: any FlowAccessProtocol {
+Sources/Actors/FlowAccessActor.swift:38:	public func getLatestBlockHeader(
+Sources/Actors/FlowAccessActor.swift:39:		blockStatus: Flow.BlockStatus = .final
+Sources/Actors/FlowAccessActor.swift:40:	) async throws -> Flow.BlockHeader {
+Sources/Actors/FlowAccessActor.swift:41:		try await client.getLatestBlockHeader(blockStatus: blockStatus)
+Sources/Actors/FlowAccessActor.swift:44:	public func getBlockHeaderById(id: Flow.ID) async throws -> Flow.BlockHeader {
+Sources/Actors/FlowAccessActor.swift:45:		try await client.getBlockHeaderById(id: id)
+Sources/Actors/FlowAccessActor.swift:48:	public func getBlockHeaderByHeight(height: UInt64) async throws -> Flow.BlockHeader {
+Sources/Actors/FlowAccessActor.swift:49:		try await client.getBlockHeaderByHeight(height: height)
+Sources/Actors/FlowAccessActor.swift:52:	public func getLatestBlock(
+Sources/Actors/FlowAccessActor.swift:53:		blockStatus: Flow.BlockStatus = .final
+Sources/Actors/FlowAccessActor.swift:54:	) async throws -> Flow.Block {
+Sources/Actors/FlowAccessActor.swift:55:		try await client.getLatestBlock(blockStatus: blockStatus)
+Sources/Actors/FlowAccessActor.swift:58:	public func getLatestBlock(
+Sources/Actors/FlowAccessActor.swift:60:	) async throws -> Flow.Block {
+Sources/Actors/FlowAccessActor.swift:61:		try await client.getLatestBlock(sealed: sealed)
+Sources/Actors/FlowAccessActor.swift:64:	public func getBlockById(id: Flow.ID) async throws -> Flow.Block {
+Sources/Actors/FlowAccessActor.swift:65:		try await client.getBlockById(id: id)
+Sources/Actors/FlowAccessActor.swift:68:	public func getBlockByHeight(height: UInt64) async throws -> Flow.Block {
+Sources/Actors/FlowAccessActor.swift:69:		try await client.getBlockByHeight(height: height)
+Sources/Actors/FlowAccessActor.swift:76:	public func sendTransaction(
+Sources/Actors/FlowAccessActor.swift:77:		transaction: Flow.Transaction
+Sources/Actors/FlowAccessActor.swift:79:		try await client.sendTransaction(transaction: transaction)
+Sources/Actors/FlowAccessActor.swift:82:	public func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {
+Sources/Actors/FlowAccessActor.swift:83:		try await client.getTransactionById(id: id)
+Sources/Actors/FlowAccessActor.swift:86:	public func getTransactionResultById(id: Flow.ID) async throws -> Flow.TransactionResult {
+Sources/Actors/FlowAccessActor.swift:87:		try await client.getTransactionResultById(id: id)
+Sources/Actors/FlowAccessActor.swift:90:	public func getAccountAtLatestBlock(
+Sources/Actors/FlowAccessActor.swift:91:		address: Flow.Address,
+Sources/Actors/FlowAccessActor.swift:92:		blockStatus: Flow.BlockStatus = .final
+Sources/Actors/FlowAccessActor.swift:93:	) async throws -> Flow.Account {
+Sources/Actors/FlowAccessActor.swift:94:		try await client.getAccountAtLatestBlock(address: address, blockStatus: blockStatus)
+Sources/Actors/FlowAccessActor.swift:97:	public func getAccountAtLatestBlock(
+Sources/Actors/FlowAccessActor.swift:99:		blockStatus: Flow.BlockStatus = .final
+Sources/Actors/FlowAccessActor.swift:100:	) async throws -> Flow.Account {
+Sources/Actors/FlowAccessActor.swift:101:		try await client.getAccountAtLatestBlock(address: address, blockStatus: blockStatus)
+Sources/Actors/FlowAccessActor.swift:104:	public func getAccountByBlockHeight(
+Sources/Actors/FlowAccessActor.swift:105:		address: Flow.Address,
+Sources/Actors/FlowAccessActor.swift:107:	) async throws -> Flow.Account {
+Sources/Actors/FlowAccessActor.swift:108:		try await client.getAccountByBlockHeight(address: address, height: height)
+Sources/Actors/FlowAccessActor.swift:111:	public func executeScriptAtLatestBlock(
+Sources/Actors/FlowAccessActor.swift:114:		blockStatus: Flow.BlockStatus = .final
+Sources/Actors/FlowAccessActor.swift:116:		try await client.executeScriptAtLatestBlock(
+Sources/Actors/FlowAccessActor.swift:123:	public func executeScriptAtBlockId(
+Sources/Actors/FlowAccessActor.swift:128:		try await client.executeScriptAtBlockId(
+Sources/Actors/FlowAccessActor.swift:135:	public func executeScriptAtBlockHeight(
+Sources/Actors/FlowAccessActor.swift:140:		try await client.executeScriptAtBlockHeight(
+Sources/Actors/FlowAccessActor.swift:154:	public func getEventsForBlockIds(
+Sources/Actors/FlowAccessActor.swift:158:		try await client.getEventsForBlockIds(type: type, ids: ids)
+Sources/Actors/FlowWebsocketActor.swift:6:	//  Modernized to delegate to FlowWebSocketCenter (NIO) while using
+Sources/Actors/FlowWebsocketActor.swift:29:		/// Websocket façade that delegates to FlowWebSocketCenter + NIO
+Sources/Actors/FlowWebsocketActor.swift:45:					try await FlowWebSocketCenter.shared.connectIfNeeded()
+Sources/Actors/FlowWebsocketActor.swift:56:				await FlowWebSocketCenter.shared.disconnect()
+Sources/Actors/FlowWebsocketActor.swift:61:			// MARK: - Transaction status subscription
+Sources/Actors/FlowWebsocketActor.swift:64:			/// transaction ID. The stream is backed by FlowWebSocketCenter's shared
+Sources/Actors/FlowWebsocketActor.swift:66:		public func subscribeToTransactionStatus(
+Sources/Actors/FlowWebsocketActor.swift:68:		) async throws -> AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error> {
+Sources/Actors/FlowWebsocketActor.swift:69:				// subscribeToTransactionStatus now sends the subscribe frame AND
+Sources/Actors/FlowWebsocketActor.swift:72:			let stream = try await FlowWebSocketCenter.shared.subscribeToTransactionStatus(id: txId)
+Sources/Actors/FlowWebsocketActor.swift:81:							let txResult = try payload.asTransactionResult()
+Sources/Actors/FlowWebsocketActor.swift:83:							await Flow.shared.publisher.publishTransactionStatus(
+Sources/Actors/FlowWebsocketActor.swift:102:		public static func subscribeToManyTransactionStatuses(
+Sources/Actors/FlowWebsocketActor.swift:104:		) async throws -> [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] {
+Sources/Actors/FlowWebsocketActor.swift:105:			var result: [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] = [:]
+Sources/Actors/FlowWebsocketActor.swift:109:					.subscribeToTransactionStatus(txId: id)
+Sources/Actors/FlowWebsocketActor.swift:130:	@FlowActor
+Sources/Actors/FlowWebsocketActor.swift:135:	@FlowActor
+Sources/Actors/FlowWebsocketActor.swift:171:	enum WebSocketError: Error {
+Sources/Actors/FlowActor.swift:2:	//  FlowActor.swift
+Sources/Actors/FlowActor.swift:12:public struct FlowActor {
+Sources/Actors/FlowActor.swift:13:	public static let shared = FlowActorImpl()
+Sources/Actors/FlowActor.swift:16:public actor FlowActorImpl {
+Sources/Build/TransactionBuild.swift:2:	//  TransactionBuild.swift
+Sources/Build/TransactionBuild.swift:26:public func cadence(text: () -> String) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:27:	Flow.TransactionBuild.script(Flow.Script(text: text()))
+Sources/Build/TransactionBuild.swift:30:public func cadence(text: () -> Flow.Script) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:31:	Flow.TransactionBuild.script(text())
+Sources/Build/TransactionBuild.swift:34:public func arguments(text: () -> [Flow.Cadence.FValue]) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:35:	Flow.TransactionBuild.argument(text().compactMap { Flow.Argument(value: $0) })
+Sources/Build/TransactionBuild.swift:38:public func arguments(text: () -> [Flow.Argument]) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:39:	Flow.TransactionBuild.argument(text())
+Sources/Build/TransactionBuild.swift:42:public func payer(text: () -> String) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:43:	Flow.TransactionBuild.payer(Flow.Address(hex: text()))
+Sources/Build/TransactionBuild.swift:46:public func payer(text: () -> Flow.Address) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:47:	Flow.TransactionBuild.payer(text())
+Sources/Build/TransactionBuild.swift:50:public func authorizers(text: () -> [Flow.Address]) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:51:	Flow.TransactionBuild.authorizers(text())
+Sources/Build/TransactionBuild.swift:54:public func authorizers(text: () -> Flow.Address) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:55:	Flow.TransactionBuild.authorizers([text()])
+Sources/Build/TransactionBuild.swift:58:public func proposer(text: () -> String) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:59:	let address = Flow.Address(hex: text())
+Sources/Build/TransactionBuild.swift:60:	return Flow.TransactionBuild.proposer(Flow.TransactionProposalKey(address: address))
+Sources/Build/TransactionBuild.swift:63:public func proposer(text: () -> Flow.Address) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:64:	Flow.TransactionBuild.proposer(Flow.TransactionProposalKey(address: text()))
+Sources/Build/TransactionBuild.swift:67:public func proposer(text: () -> Flow.TransactionProposalKey) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:68:	Flow.TransactionBuild.proposer(text())
+Sources/Build/TransactionBuild.swift:71:public func gasLimit(text: () -> BigUInt) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:72:	Flow.TransactionBuild.gasLimit(text())
+Sources/Build/TransactionBuild.swift:75:public func gasLimit(text: () -> Int) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:76:	Flow.TransactionBuild.gasLimit(BigUInt(text()))
+Sources/Build/TransactionBuild.swift:79:public func refBlock(text: () -> String?) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:81:		return Flow.TransactionBuild.refBlock(nil)
+Sources/Build/TransactionBuild.swift:83:	return Flow.TransactionBuild.refBlock(Flow.ID(hex: blockId))
+Sources/Build/TransactionBuild.swift:86:public func refBlock(text: () -> Flow.ID) -> Flow.TransactionBuild {
+Sources/Build/TransactionBuild.swift:87:	Flow.TransactionBuild.refBlock(text())
+Sources/Build/TransactionBuild.swift:90:	// MARK: - TransactionBuild DSL
+Sources/Build/TransactionBuild.swift:94:	enum TransactionBuild {
+Sources/Build/TransactionBuild.swift:97:		case payer(Flow.Address)
+Sources/Build/TransactionBuild.swift:98:		case authorizers([Flow.Address])
+Sources/Build/TransactionBuild.swift:99:		case proposer(Flow.TransactionProposalKey)
+Sources/Build/TransactionBuild.swift:101:		case refBlock(Flow.ID?)
+Sources/Build/TransactionBuild.swift:105:		enum TransactionBuilder {
+Sources/Build/TransactionBuild.swift:106:			public static func buildBlock() -> [Flow.TransactionBuild] { [] }
+Sources/Build/TransactionBuild.swift:109:				_ components: [[Flow.TransactionBuild]]
+Sources/Build/TransactionBuild.swift:110:			) -> [Flow.TransactionBuild] {
+Sources/Build/TransactionBuild.swift:114:			public static func buildBlock(
+Sources/Build/TransactionBuild.swift:115:				_ components: Flow.TransactionBuild...
+Sources/Build/TransactionBuild.swift:116:			) -> [Flow.TransactionBuild] {
+Sources/Build/TransactionBuild.swift:125:@FlowActor
+Sources/Build/TransactionBuild.swift:129:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:132:		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
+Sources/Build/TransactionBuild.swift:133:	) async throws -> Flow.Transaction {
+Sources/Build/TransactionBuild.swift:143:		var auths: [Flow.Address] = []
+Sources/Build/TransactionBuild.swift:144:		var payer: Flow.Address?
+Sources/Build/TransactionBuild.swift:145:		var proposer: Flow.TransactionProposalKey?
+Sources/Build/TransactionBuild.swift:147:		var refBlock: Flow.ID?
+Sources/Build/TransactionBuild.swift:207:				case let .refBlock(value):
+Sources/Build/TransactionBuild.swift:208:					refBlock = value
+Sources/Build/TransactionBuild.swift:225:				message: "Transaction build failed: Empty proposer"
+Sources/Build/TransactionBuild.swift:231:		let httpAPI = FlowHTTPAPI(chainID: chainID) as FlowAccessProtocol
+Sources/Build/TransactionBuild.swift:234:		let id = try await resolveBlockId(api: httpAPI, refBlock: refBlock)
+Sources/Build/TransactionBuild.swift:241:		let key = try await resolveProposalKey(api: httpAPI, proposalKey: proposalKey)
+Sources/Build/TransactionBuild.swift:252:					message: "Transaction build failed: Invalid script format"
+Sources/Build/TransactionBuild.swift:258:		let transaction = Flow.Transaction(
+Sources/Build/TransactionBuild.swift:261:			referenceBlockId: id,
+Sources/Build/TransactionBuild.swift:271:   Transaction built successfully:
+Sources/Build/TransactionBuild.swift:286:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:288:		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
+Sources/Build/TransactionBuild.swift:289:	) async throws -> Flow.Transaction {
+Sources/Build/TransactionBuild.swift:290:		let currentChainID = await FlowActors.config.chainID
+Sources/Build/TransactionBuild.swift:291:		return try await buildTransaction(
+Sources/Build/TransactionBuild.swift:298:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:302:		authorizer: [Flow.Address] = [],
+Sources/Build/TransactionBuild.swift:303:		payerAddress: Flow.Address,
+Sources/Build/TransactionBuild.swift:304:		proposerKey: Flow.TransactionProposalKey,
+Sources/Build/TransactionBuild.swift:307:	) async throws -> Flow.Transaction {
+Sources/Build/TransactionBuild.swift:312:		return try await buildTransaction(chainID: chainID) {
+Sources/Build/TransactionBuild.swift:318:			payer { payerAddress }
+Sources/Build/TransactionBuild.swift:319:			refBlock { blockID?.hex }
+Sources/Build/TransactionBuild.swift:323:	func buildTransaction(
+Sources/Build/TransactionBuild.swift:326:		authorizer: [Flow.Address] = [],
+Sources/Build/TransactionBuild.swift:327:		payerAddress: Flow.Address,
+Sources/Build/TransactionBuild.swift:328:		proposerKey: Flow.TransactionProposalKey,
+Sources/Build/TransactionBuild.swift:331:	) async throws -> Flow.Transaction {
+Sources/Build/TransactionBuild.swift:332:		let currentChainID = await FlowActors.config.chainID
+Sources/Build/TransactionBuild.swift:333:		return try await buildTransaction(
+Sources/Build/TransactionBuild.swift:338:			payerAddress: payerAddress,
+Sources/Build/TransactionBuild.swift:345:	func sendTransaction(
+Sources/Build/TransactionBuild.swift:347:		signedTransaction: Flow.Transaction
+Sources/Build/TransactionBuild.swift:349:		let api = FlowHTTPAPI(chainID: chainID) as FlowAccessProtocol
+Sources/Build/TransactionBuild.swift:350:		return try await api.sendTransaction(transaction: signedTransaction)
+Sources/Build/TransactionBuild.swift:353:	func sendTransaction(
+Sources/Build/TransactionBuild.swift:354:		signedTransaction: Flow.Transaction
+Sources/Build/TransactionBuild.swift:356:		let currentChainID = await FlowActors.config.chainID
+Sources/Build/TransactionBuild.swift:357:		return try await sendTransaction(chainID: currentChainID, signedTransaction: signedTransaction)
+Sources/Build/TransactionBuild.swift:359:	func sendTransaction(
+Sources/Build/TransactionBuild.swift:361:		signers: [FlowSigner],
+Sources/Build/TransactionBuild.swift:362:		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
+Sources/Build/TransactionBuild.swift:364:		let api = await FlowActors.access.currentClient
+Sources/Build/TransactionBuild.swift:365:		let unsignedTx = try await buildTransaction(chainID: chainID, builder: builder)
+Sources/Build/TransactionBuild.swift:367:			// This is fine: both methods are FlowActor‑isolated.
+Sources/Build/TransactionBuild.swift:368:		let signedTx = try await signTransaction(
+Sources/Build/TransactionBuild.swift:369:			unsignedTransaction: unsignedTx,
+Sources/Build/TransactionBuild.swift:373:		return try await api.sendTransaction(transaction: signedTx)
+Sources/Build/TransactionBuild.swift:377:	func sendTransaction(
+Sources/Build/TransactionBuild.swift:378:		signers: [FlowSigner],
+Sources/Build/TransactionBuild.swift:379:		@Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
+Sources/Build/TransactionBuild.swift:381:		let currentChainID = await FlowActors.config.chainID
+Sources/Build/TransactionBuild.swift:382:		return try await sendTransaction(chainID: currentChainID, signers: signers, builder: builder)
+Sources/Build/TransactionBuild.swift:388:private func resolveBlockId(
+Sources/Build/TransactionBuild.swift:389:	api: FlowAccessProtocol,
+Sources/Build/TransactionBuild.swift:390:	refBlock: Flow.ID?
+Sources/Build/TransactionBuild.swift:392:	if let blockID = refBlock {
+Sources/Build/TransactionBuild.swift:400:		let block = try await api.getLatestBlock(sealed: true)
+Sources/Build/TransactionBuild.swift:409:private func resolveProposalKey(
+Sources/Build/TransactionBuild.swift:410:	api: FlowAccessProtocol,
+Sources/Build/TransactionBuild.swift:411:	proposalKey: Flow.TransactionProposalKey
+Sources/Build/TransactionBuild.swift:412:) async throws -> Flow.TransactionProposalKey {
+Sources/Build/TransactionBuild.swift:418:		let account = try await api.getAccountAtLatestBlock(
+Sources/Build/TransactionBuild.swift:427:			throw Flow.FError.preparingTransactionFailed
+Sources/Build/TransactionBuild.swift:430:		let newKey = Flow.TransactionProposalKey(
+Sources/Cadence/ContractAddress.swift:2:	//  ContractAddress.swift
+Sources/Cadence/ContractAddress.swift:11:	/// Contract Address Register manages the mapping of contract names to their addresses
+Sources/Cadence/ContractAddress.swift:13:public final class ContractAddressRegister {
+Sources/Cadence/ContractAddress.swift:21:	public func setAddress(
+Sources/Cadence/ContractAddress.swift:56:public actor ContractAddressRegisterActor {
+Sources/Cadence/ContractAddress.swift:58:	public static let shared = ContractAddressRegisterActor()
+Sources/Cadence/ContractAddress.swift:60:	private let storage = ContractAddressRegister()
+Sources/Cadence/ContractAddress.swift:64:	public func setAddress(
+Sources/Cadence/ContractAddress.swift:69:		storage.setAddress(address, for: name, on: chainID)
+Sources/Cadence/ContractAddress.swift:81:		try FlowAddressLoader.loadContractMap(fromPath: path, into: storage)
+Sources/Cadence/CadenceTargetType.swift:3:public enum CadenceType: String {
+Sources/Cadence/CadenceTargetType.swift:8:public protocol CadenceTargetType {
+Sources/Cadence/CadenceTargetType.swift:9:		/// Base64-encoded Cadence script
+Sources/Cadence/CadenceTargetType.swift:13:	var type: CadenceType { get }
+Sources/Cadence/CadenceTargetType.swift:28:		_ target: CadenceTargetType,
+Sources/Cadence/CadenceTargetType.swift:32:			throw NSError(domain: "Invalid Cadence Base64 String", code: 9900001)
+Sources/Cadence/CadenceTargetType.swift:38:		let api = await FlowActors.access.currentClient
+Sources/Cadence/CadenceTargetType.swift:40:		let response = try await api.executeScriptAtLatestBlock(
+Sources/Cadence/CadenceTargetType.swift:42:			arguments: target.arguments as! [Flow.Cadence.FValue] 
+Sources/Cadence/CadenceTargetType.swift:48:		/// Transaction with generic argument building
+Sources/Cadence/CadenceTargetType.swift:49:	public func sendTransaction<T: CadenceTargetType>(
+Sources/Cadence/CadenceTargetType.swift:51:		signers: [FlowSigner],
+Sources/Cadence/CadenceTargetType.swift:55:			throw NSError(domain: "Invalid Cadence Base64 String", code: 9900001)
+Sources/Cadence/CadenceTargetType.swift:60:			// Empty result-builder body: no additional TransactionBuild steps.
+Sources/Cadence/CadenceTargetType.swift:61:		var tx = try await buildTransaction(
+Sources/Cadence/CadenceTargetType.swift:71:		let signedTx = try await signTransaction(
+Sources/Cadence/CadenceTargetType.swift:72:			unsignedTransaction: tx,
+Sources/Cadence/CadenceTargetType.swift:76:		return try await sendTransaction(transaction: signedTx)
+Sources/Cadence/Cadence+Token.swift:2:	//  Cadence+Token.swift
+Sources/Cadence/Cadence+Token.swift:11:	// MARK: - Cadence Loader Category
+Sources/Cadence/Cadence+Token.swift:13:extension CadenceLoader.Category {
+Sources/Cadence/Cadence+Token.swift:14:	public enum Token: String, CaseIterable, CadenceLoaderProtocol {
+Sources/Cadence/Cadence+Token.swift:24:	/// Get all token balances for an account using the Cadence script
+Sources/Cadence/Cadence+Token.swift:28:	/// helpers (FlowActor / FlowAccessActor) so there is no "sending self".
+Sources/Cadence/Cadence+Token.swift:30:	address: Flow.Address
+Sources/Cadence/Cadence+Token.swift:33:		let scriptSource = try await CadenceLoader.load(
+Sources/Cadence/Cadence+Token.swift:34:		CadenceLoader.Category.Token.getTokenBalanceStorage
+Sources/Cadence/Cadence+Token.swift:38:		let accessAPI = await FlowAccessActor.shared.currentClient
+Sources/Cadence/Cadence+Token.swift:40:		let response = try await accessAPI.executeScriptAtLatestBlock(
+Sources/Cadence/Cadence+Token.swift:42:			arguments: [Flow.Cadence.FValue.address(address).toArgument()],
+Sources/Cadence/Cadence+Token.swift:43:			blockStatus: Flow.BlockStatus.final
+Sources/Cadence/Cadence+Token.swift:69:	func loadBalances(for address: Flow.Address) {
+Sources/Cadence/ContractAddressRegisterDelegate.swift:2:	//  ContractAddressRegisterDelegate.swift
+Sources/Cadence/ContractAddressRegisterDelegate.swift:11:protocol CadenceDelegate {
+Sources/Cadence/Cadence+Child.swift:2:	//  Cadence+Child.swift
+Sources/Cadence/Cadence+Child.swift:11:extension CadenceLoader.Category {
+Sources/Cadence/Cadence+Child.swift:12:	public enum Child: String, CaseIterable, CadenceLoaderProtocol {
+Sources/Cadence/Cadence+Child.swift:13:		case getChildAddress = "get_child_addresses"
+Sources/Cadence/Cadence+Child.swift:14:		case getChildAccountMeta = "get_child_account_meta"
+Sources/Cadence/Cadence+Child.swift:21:extension CadenceLoader.Category.Child {
+Sources/Cadence/Cadence+Child.swift:42:// Swift 6 async extensions; keep them on FlowActor to avoid cross‑actor captures.
+Sources/Cadence/Cadence+Child.swift:46:	func getChildAddress(address: Flow.Address) async throws -> [Flow.Address] {
+Sources/Cadence/Cadence+Child.swift:47:		let script = try await CadenceLoader.load(
+Sources/Cadence/Cadence+Child.swift:48:		CadenceLoader.Category.Child.getChildAddress
+Sources/Cadence/Cadence+Child.swift:50:		return try await executeScriptAtLatestBlock(
+Sources/Cadence/Cadence+Child.swift:52:		arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+Sources/Cadence/Cadence+Child.swift:58:		address: Flow.Address
+Sources/Cadence/Cadence+Child.swift:59:	) async throws -> [String: CadenceLoader.Category.Child.Metadata] {
+Sources/Cadence/Cadence+Child.swift:60:		let script = try await CadenceLoader.load(
+Sources/Cadence/Cadence+Child.swift:61:			CadenceLoader.Category.Child.getChildAccountMeta
+Sources/Cadence/Cadence+Child.swift:63:		return try await executeScriptAtLatestBlock(
+Sources/Cadence/Cadence+Child.swift:65:			arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+Sources/Cadence/CadenceLoader.swift:2:	//  CadenceLoader.swift
+Sources/Cadence/CadenceLoader.swift:10:	// Global actor for Cadence loading
+Sources/Cadence/CadenceLoader.swift:12:public actor CadenceLoaderActor {
+Sources/Cadence/CadenceLoader.swift:13:	public static let shared = CadenceLoaderActor()
+Sources/Cadence/CadenceLoader.swift:18:public protocol CadenceLoaderProtocol: Sendable {
+Sources/Cadence/CadenceLoader.swift:23:public extension CadenceLoaderProtocol {
+Sources/Cadence/CadenceLoader.swift:31:	/// Utility type for loading Cadence scripts from resources
+Sources/Cadence/CadenceLoader.swift:32:@CadenceLoaderActor
+Sources/Cadence/CadenceLoader.swift:33:public final class CadenceLoader: @unchecked Sendable {
+Sources/Cadence/CadenceLoader.swift:37:	public static let subdirectory = "CommonCadence"
+Sources/Cadence/CadenceLoader.swift:39:		/// Load a Cadence script from the module bundle.
+Sources/Cadence/CadenceLoader.swift:41:		///   - name: Name of the Cadence file without extension.
+Sources/Cadence/CadenceLoader.swift:42:		///   - directory: Directory under `CommonCadence`.
+Sources/Cadence/CadenceLoader.swift:43:		/// - Returns: Cadence source.
+Sources/Cadence/CadenceLoader.swift:49:		? CadenceLoader.subdirectory
+Sources/Cadence/CadenceLoader.swift:50:		: "\(CadenceLoader.subdirectory)/\(directory)"
+Sources/Cadence/CadenceLoader.swift:63:	public static func load(_ path: CadenceLoaderProtocol) throws -> String {
+Sources/Cadence/Cadence+EVM.swift:12:extension CadenceLoader.Category {
+Sources/Cadence/Cadence+EVM.swift:13:	public enum EVM: String, CaseIterable, CadenceLoaderProtocol {
+Sources/Cadence/Cadence+EVM.swift:14:		case getAddress = "get_addr"
+Sources/Cadence/Cadence+EVM.swift:25:	func getEVMAddress(address: Flow.Address) async throws -> String? {
+Sources/Cadence/Cadence+EVM.swift:26:		let script = try await CadenceLoader.load(
+Sources/Cadence/Cadence+EVM.swift:27:		CadenceLoader.Category.EVM.getAddress
+Sources/Cadence/Cadence+EVM.swift:29:		return try await executeScriptAtLatestBlock(
+Sources/Cadence/Cadence+EVM.swift:31:		arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+Sources/Cadence/Cadence+EVM.swift:35:		/// Create Cadence Object Account (COA) with gas fee
+Sources/Cadence/Cadence+EVM.swift:36:	@FlowActor
+Sources/Cadence/Cadence+EVM.swift:39:		proposer: Address,
+Sources/Cadence/Cadence+EVM.swift:40:		payer: Address,
+Sources/Cadence/Cadence+EVM.swift:42:		signers: [FlowSigner]
+Sources/Cadence/Cadence+EVM.swift:48:		let script = try await CadenceLoader.load(
+Sources/Cadence/Cadence+EVM.swift:49:			CadenceLoader.Category.EVM.createCOA
+Sources/Cadence/Cadence+EVM.swift:52:		let unsignedTx = try await buildTransaction(
+Sources/Cadence/Cadence+EVM.swift:56:			payerAddress: payer,
+Sources/Cadence/Cadence+EVM.swift:60:		let signedTx = try await signTransaction(
+Sources/Cadence/Cadence+EVM.swift:61:			unsignedTransaction: unsignedTx,
+Sources/Cadence/Cadence+EVM.swift:65:		return try await sendTransaction(
+Sources/Cadence/Cadence+EVM.swift:67:			signedTransaction: signedTx
+Sources/Cadence/Cadence+EVM.swift:72:	@FlowActor
+Sources/Cadence/Cadence+EVM.swift:73:	func runEVMTransaction(
+Sources/Cadence/Cadence+EVM.swift:75:		proposer: Address,
+Sources/Cadence/Cadence+EVM.swift:76:		payer: Address,
+Sources/Cadence/Cadence+EVM.swift:77:		rlpEncodedTransaction: [UInt8],
+Sources/Cadence/Cadence+EVM.swift:78:		coinbaseAddress: String,
+Sources/Cadence/Cadence+EVM.swift:79:		signers: [FlowSigner]
+Sources/Cadence/Cadence+EVM.swift:82:			let txArg = rlpEncodedTransaction.toFlowValue()?.toArgument(),
+Sources/Cadence/Cadence+EVM.swift:83:			let coinbaseArg = coinbaseAddress.toFlowValue()?.toArgument()
+Sources/Cadence/Cadence+EVM.swift:88:		let script = try await CadenceLoader.load(
+Sources/Cadence/Cadence+EVM.swift:89:			CadenceLoader.Category.EVM.evmRun
+Sources/Cadence/Cadence+EVM.swift:92:		let unsignedTx = try await buildTransaction(
+Sources/Cadence/Cadence+EVM.swift:96:			payerAddress: payer,
+Sources/Cadence/Cadence+EVM.swift:100:		let signedTx = try await signTransaction(
+Sources/Cadence/Cadence+EVM.swift:101:			unsignedTransaction: unsignedTx,
+Sources/Cadence/Cadence+EVM.swift:105:		return try await sendTransaction(
+Sources/Cadence/Cadence+EVM.swift:107:			signedTransaction: signedTx
+Sources/Cadence/Cadence+Staking.swift:11:public extension CadenceLoader.Category {
+Sources/Cadence/Cadence+Staking.swift:12:	enum Staking: String, CaseIterable, CadenceLoaderProtocol {
+Sources/Cadence/Cadence+Staking.swift:19:public extension CadenceLoader.Category.Staking {
+Sources/Cadence/Cadence+Staking.swift:44:		address: Flow.Address
+Sources/Cadence/Cadence+Staking.swift:45:	) async throws -> [CadenceLoader.Category.Staking.StakingNode] {
+Sources/Cadence/Cadence+Staking.swift:46:		let script = try await CadenceLoader.load(
+Sources/Cadence/Cadence+Staking.swift:47:			CadenceLoader.Category.Staking.getDelegatorInfo
+Sources/Cadence/Cadence+Staking.swift:49:		return try await executeScriptAtLatestBlock(
+Sources/Cadence/Cadence+Staking.swift:51:			arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+Sources/Cadence/Cadence+Staking.swift:69:		for addresses: [Flow.Address]
+Sources/Cadence/Cadence+Staking.swift:70:	) async throws -> [Flow.Address: [CadenceLoader.Category.Staking.StakingNode]] {
+Sources/Cadence/Cadence+Staking.swift:72:			of: (Flow.Address, [CadenceLoader.Category.Staking.StakingNode]).self
+Sources/Cadence/Cadence+Staking.swift:81:			var dict: [Flow.Address: [CadenceLoader.Category.Staking.StakingNode]] = [:]
+Sources/Error/FlowError.swift:36:		case invaildAccountInfo
+Sources/Error/FlowError.swift:37:		case missingSigner
+Sources/Error/FlowError.swift:38:		case preparingTransactionFailed
+Sources/Error/FlowError.swift:44:		case createWebSocketFailed
+Sources/Error/FVMError.swift:22:	case invalidReferenceBlockError = 1002
+Sources/Error/FVMError.swift:24:	case expiredTransactionError = 1003
+Sources/Error/FVMError.swift:29:	case invalidProposalSignatureError = 1006
+Sources/Error/FVMError.swift:31:	case invalidPayloadSignatureError = 1008
+Sources/Error/FVMError.swift:32:	case invalidEnvelopeSignatureError = 1009
+Sources/Error/FVMError.swift:39:	case invalidAddressError = 1053
+Sources/Error/FVMError.swift:77:	case frozenAccountError = 1204
