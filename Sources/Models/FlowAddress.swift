@@ -61,13 +61,13 @@ public extension Flow {
 		public init(hex: String) {
 			let stripped = hex.stripHexPrefix()
 			let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
-			self.init( padded.hexValue.data)
+			self.init(data: padded.hexValue.data)
 		}
 
 		public init(_ hex: String) {
 			let stripped = hex.stripHexPrefix()
 			let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
-			self.init( padded.hexValue.data)
+			self.init(data: padded.hexValue.data)
 		}
 
 
