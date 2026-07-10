@@ -16,26 +16,9 @@
 	//  limitations under the License.
 	//
 	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
-import SwiftUI
-
-	/// Flow Address Model
-	///
-	/// Represents account addresses on the Flow blockchain.
-	/// Handles address formatting, validation, and conversion.
-	///
-	/// Features:
-	/// - Hex string parsing
-	/// - Address validation
-	/// - String representation
-	/// - Equatable comparison
-	///
-	/// Example usage:
-	/// ```swift
-	/// let address = Flow.Address(hex: "0x1234")
-	/// let account = try await flow.getAccountAtLatestBlock(address: address)
-	/// ```
 
 import Foundation
+import SwiftUI
 
 public extension Flow {
 
@@ -43,6 +26,19 @@ public extension Flow {
 		///
 		/// Represents account addresses on the Flow blockchain.
 		/// Handles address formatting, validation, and conversion.
+		///
+		/// Features:
+		/// - Hex string parsing
+		/// - Address validation
+		/// - String representation
+		/// - Equatable comparison
+		///
+		/// Example usage:
+		/// ```swift
+		/// let address = Flow.Address(hex: "0x1234")
+		/// let account = try await flow.getAccountAtLatestBlock(address: address)
+		/// ```
+
 	struct Address: FlowEntity, Equatable, Hashable, Codable, CustomStringConvertible {
 
 			/// Flow address size in bytes.
@@ -70,7 +66,6 @@ public extension Flow {
 			self.init(data: padded.hexValue.data)
 		}
 
-
 		public init(data: Data) {
 			if data.bytes.count == Flow.Address.byteLength {
 				self.data = data
@@ -81,7 +76,7 @@ public extension Flow {
 			}
 		}
 
-		 public init(bytes: [UInt8]) {
+		public init(bytes: [UInt8]) {
 			self.init(data: bytes.data)
 		}
 
