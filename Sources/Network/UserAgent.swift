@@ -81,10 +81,12 @@ public enum UserAgent {
 		/// eg. iOS/10.1 or macOS/14.2.1
 	static let deviceVersion: String = {
 #if os(iOS)
-		let currentDevice = UIDevice.current
-		let name = currentDevice.systemName.isEmpty ? "iOS" : currentDevice.systemName
-		let version = currentDevice.systemVersion.isEmpty ? "0.0" : currentDevice.systemVersion
-		return "\(name)/\(version)"
+		return MainActor.assumeIsolated {
+			let currentDevice = UIDevice.current
+			let name = currentDevice.systemName.isEmpty ? "iOS" : currentDevice.systemName
+			let version = currentDevice.systemVersion.isEmpty ? "0.0" : currentDevice.systemVersion
+			return "\(name)/\(version)"
+		}
 #elseif os(macOS)
 		let info = ProcessInfo.processInfo
 		let major = info.operatingSystemVersion.majorVersion
