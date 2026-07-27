@@ -49,6 +49,14 @@ public extension Flow {
 			self.payload = payload
 		}
 
+		private enum CodingKeys: String, CodingKey {
+			case type
+			case transactionId = "transaction_id"
+			case transactionIndex = "transaction_index"
+			case eventIndex = "event_index"
+			case payload
+		}
+
 		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 			self.type = try container.decode(String.self, forKey: .type)
@@ -91,7 +99,9 @@ public extension Flow {
 				let heightString = try container.decode(String.self, forKey: .blockHeight)
 				self.blockHeight = UInt64(heightString) ?? 0
 
-				self.events = try container.decode([Flow.Event].self, forKey: .events)
+					// The API omits the "events" key entirely for blocks with no matching
+					// events, rather than returning an empty array. Default to [] for compatibility.
+				self.events = try container.decodeIfPresent([Flow.Event].self, forKey: .events) ?? []
 			}
 		}
 

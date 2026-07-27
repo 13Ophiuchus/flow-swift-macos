@@ -39,10 +39,17 @@ final class FlowWebSocketFrameHandler: ChannelInboundHandler, @unchecked Sendabl
 		}
 
 		do {
+			#if DEBUG
+			print("[FlowWS RECV] " + String(decoding: bytes, as: UTF8.self))
+			#endif
 			let envelope = try JSONDecoder().decode(Flow.WebSocketEnvelope.self, from: Data(bytes))
+			#if DEBUG
+			print("[FlowWS DECODED] id=\(envelope.id ?? "nil") topic=\(String(describing: envelope.topic)) hasPayload=\(envelope.payload != nil)")
+			#endif
 
 				// 1. Feed the AsyncStream bus so subscription streams receive it.
 			onEnvelope?(envelope)
+			context.channel.read()
 
 				// 2. Also publish high-level events via Flow.Publisher (existing behaviour).
 			handleEnvelope(envelope, context: context)
