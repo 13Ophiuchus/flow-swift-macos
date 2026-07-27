@@ -87,7 +87,7 @@ struct FlowParallelClientScriptsTests {
 		}
 
 		if case .failure? = results[.init(id: 2, name: "B")] {
-			#expect(true)
+			#expect(Bool(true))
 		} else {
 			Issue.record("Expected failure for target B")
 		}

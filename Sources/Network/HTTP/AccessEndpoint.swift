@@ -45,7 +45,7 @@ extension Flow {
 
 extension Flow.AccessEndpoint: TargetType {
 
-	var task: Task {
+	var task: HTTPTask {
 		switch self {
 			case .ping:
 				return .requestParameters(["height": "sealed"])

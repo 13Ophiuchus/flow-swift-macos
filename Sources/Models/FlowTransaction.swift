@@ -402,11 +402,16 @@ public extension Flow {
 		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 			status = try container.decode(Flow.Transaction.Status.self, forKey: .status)
-			errorMessage = try container.decode(String.self, forKey: .errorMessage)
-			events = try container.decode([Flow.Event].self, forKey: .events)
-			statusCode = try container.decode(Int.self, forKey: .statusCode)
-			blockId = try container.decode(Flow.ID.self, forKey: .blockId)
-			computationUsed = try container.decode(String.self, forKey: .computationUsed)
+			// The access node omits `error_message` entirely when there is no error,
+			// rather than sending an empty string or null, so this must be optional.
+			errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage) ?? ""
+			events = try container.decodeIfPresent([Flow.Event].self, forKey: .events) ?? []
+			statusCode = try container.decodeIfPresent(Int.self, forKey: .statusCode) ?? 0
+			// Early-stage statuses (e.g. Pending) may not yet have a block_id
+			// populated by the access node, so fall back to a zero-filled ID.
+			blockId = try container.decodeIfPresent(Flow.ID.self, forKey: .blockId)
+				?? Flow.ID(data: Data(repeating: 0, count: 32))
+			computationUsed = try container.decodeIfPresent(String.self, forKey: .computationUsed) ?? "0"
 		}
 
 		public func encode(to encoder: Encoder) throws {

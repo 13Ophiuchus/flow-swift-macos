@@ -37,13 +37,13 @@ public protocol TargetType {
 	var method: Method { get }
 
 		/// The type of HTTP task to be performed.
-	var task: Task { get }
+	var task: HTTPTask { get }
 
 		/// The headers to be used in the request.
 	var headers: [String: String]? { get }
 }
 
-public enum Task {
+public enum HTTPTask {
 	/// A requests body set with encoded parameters.
 	case requestParameters(_ parameters: [String: String]? = nil, body: Encodable? = nil)
 }
