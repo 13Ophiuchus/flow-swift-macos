@@ -82,20 +82,31 @@ public actor FlowWebSocketCenter {
 	public func subscribeToTransactionStatus(
 		id: Flow.ID
 	) async throws -> AsyncThrowingStream<Flow.TopicResponse<Flow.TransactionStatusBody>, Error> {
-		await nioClient.sendTransactionStatusSubscribe(id: id)
+		try await nioClient.connectIfNeeded()
+		try await nioClient.sendTransactionStatusSubscribe(id: id)
 
 			// AsyncStream is Sendable — safe to capture into the Task below.
 		let envelopes = self.envelopes
-		let subscriptionId = "tx:\(id.hex)"
+		let subscriptionId = "tx:\(id.hex.prefix(16))"
 
 		return AsyncThrowingStream { continuation in
 			_Concurrency.Task {
 				for await envelope in envelopes {
+					guard envelope.id == subscriptionId else { continue }
+
+					if let error = envelope.error {
+						continuation.finish(
+							throwing: Flow.FError.customError(
+								msg: "Server rejected subscription \(subscriptionId): [\(error.code)] \(error.message)"
+							)
+						)
+						return
+					}
+
 						// `WebSocketEnvelope.id` is the subscription ID field —
 						// there is no `subscriptionId` property (old line 91 error).
 					guard
 						envelope.topic == .transactionStatuses,
-						envelope.id == subscriptionId,
 						let payload = envelope.transactionStatusPayload
 					else { continue }
 

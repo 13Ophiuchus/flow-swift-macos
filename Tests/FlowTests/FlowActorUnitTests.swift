@@ -19,7 +19,7 @@ import Testing
 
 	// MARK: - Shared test fixtures
 
-private let testAddress = Flow.Address(hex: "0x01cf0e2f2f715450")
+private let testAddress = Flow.Address(hex: "0x7e60df042a9c0868")
 private let testBlockID = Flow.ID(hex: "0xdeadbeef00000000000000000000000000000000000000000000000000000000")
 
 	// MARK: - FlowConfigActor
@@ -49,7 +49,7 @@ struct FlowConfigActorTests {
 
 // MARK: - FlowAccessActor
 
-@Suite("FlowAccessActor — mock-injected API calls")
+@Suite("FlowAccessActor — mock-injected API calls", .serialized)
 @FlowActor
 struct FlowAccessActorTests {
 
@@ -200,7 +200,7 @@ struct TransactionBuildDSLTests {
 
 // MARK: - buildTransaction (FlowActor-isolated, mock injected)
 
-@Suite("Flow.buildTransaction — mock-injected, no network")
+@Suite("Flow.buildTransaction — mock-injected, no network", .serialized)
 @FlowActor
 struct BuildTransactionTests {
 

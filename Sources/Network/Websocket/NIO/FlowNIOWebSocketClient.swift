@@ -66,8 +66,15 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 
 		// MARK: - Connection
 
+	private var connectTask: _Concurrency.Task<Channel, Error>?
+
 	public func connectIfNeeded() async throws {
 		if let channel = channel, channel.isActive {
+			return
+		}
+
+		if let existing = connectTask {
+			channel = try await existing.value
 			return
 		}
 
@@ -76,7 +83,16 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 			throw Flow.FError.customError(msg: "No websocket endpoint for chainID \(chainID)")
 		}
 
-		channel = try await connectWebSocket(to: url)
+		let task = _Concurrency.Task { [weak self] () -> Channel in
+			guard let self else {
+				throw Flow.FError.customError(msg: "Client deallocated during connect")
+			}
+			return try await self.connectWebSocket(to: url)
+		}
+		connectTask = task
+
+		defer { connectTask = nil }
+		channel = try await task.value
 
 		_Concurrency.Task { [addresses, accountService] in
 			do {
@@ -96,17 +112,13 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 
 		// MARK: - Subscription helpers
 
-	public func sendTransactionStatusSubscribe(id: Flow.ID) async {
+	public func sendTransactionStatusSubscribe(id: Flow.ID) async throws {
 		let args = Flow.WebSocketTransactionStatusRequest(txId: id.hex)
-		do {
-			try await sendSubscribeMessage(
-				subscriptionId: "tx:\(id.hex)",
-				topic: .transactionStatuses,
-				arguments: args
-			)
-		} catch {
-				// Higher layers can add logging if needed.
-		}
+		try await sendSubscribeMessage(
+			subscriptionId: "tx:\(id.hex.prefix(16))",
+			topic: .transactionStatuses,
+			arguments: args
+		)
 	}
 
 		// MARK: - Subscription frames
@@ -116,7 +128,9 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 		topic: Flow.WebSocketTopic,
 		arguments: Arguments
 	) async throws {
-		guard let channel = channel else { return }
+		guard let channel = channel else {
+			throw Flow.FError.customError(msg: "Cannot send subscribe message: WebSocket not connected")
+		}
 
 		let request = Flow.WebSocketSubscribeRequest(
 			id: subscriptionId,
@@ -126,16 +140,23 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 		)
 
 		let data = try JSONEncoder().encode(request)
+		print("[FlowWS SEND] " + String(decoding: data, as: UTF8.self))
 		var buffer = channel.allocator.buffer(capacity: data.count)
 		buffer.writeBytes(data)
 
+			// RFC 6455 §5.1: all client-to-server frames MUST be masked.
+			// Sending maskKey: nil produced unmasked frames that Flow's access
+			// node silently discarded server-side — the subscribe frame was
+			// written successfully but never actually processed, so no
+			// response ever arrived and every wait timed out.
+		let maskKey = WebSocketMaskingKey((0..<4).map { _ in UInt8.random(in: 0...255) })
 		let frame = WebSocketFrame(
 			fin: true,
 			rsv1: false,
 			rsv2: false,
 			rsv3: false,
 			opcode: .text,
-			maskKey: nil,
+			maskKey: maskKey,
 			data: buffer,
 			extensionData: nil
 		)
@@ -156,6 +177,12 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 			var tlsConfig = TLSConfiguration.makeClientConfiguration()
 			tlsConfig.minimumTLSVersion = .tlsv12
 			tlsConfig.certificateVerification = .fullVerification
+				// The WebSocket upgrade handshake (HTTP Upgrade header) only exists
+				// in HTTP/1.1 — HTTP/2 uses a different mechanism (RFC 8441) that
+				// this NIO pipeline does not implement. Without pinning ALPN, this
+				// server negotiates h2 by default and rejects the upgrade with a
+				// 400 Bad Request, which surfaced as our connect/read timeouts.
+			tlsConfig.applicationProtocols = ["http/1.1"]
 			sslContext = try NIOSSLContext(configuration: tlsConfig)
 		} else {
 			sslContext = nil
@@ -165,6 +192,7 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 		let deliver = self.onEnvelope  // capture before entering bootstrap closure
 
 		let bootstrap = ClientBootstrap(group: group)
+			.channelOption(ChannelOptions.autoRead, value: true)
 			.channelInitializer { channel in
 				if let context = sslContext {
 					do {
@@ -178,7 +206,11 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 					}
 				}
 
-				return Self.addHTTPAndWebSocketHandlers(to: channel, onEnvelope: deliver)
+				return Self.addHTTPAndWebSocketHandlers(
+					to: channel,
+					onEnvelope: deliver,
+					upgradePromise: promise
+				)
 			}
 
 		bootstrap.connect(host: host, port: port).whenComplete { result in
@@ -186,10 +218,13 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 				case .success(let channel):
 					var headers = HTTPHeaders()
 					headers.add(name: "Host", value: host)
-					headers.add(name: "Connection", value: "Upgrade")
-					headers.add(name: "Upgrade", value: "websocket")
-					headers.add(name: "Sec-WebSocket-Version", value: "13")
-					headers.add(name: "Sec-WebSocket-Key", value: UUID().uuidString)
+
+						// Do NOT add Connection/Upgrade/Sec-WebSocket-* headers here.
+						// NIOHTTPClientUpgradeHandler intercepts this request and calls
+						// each upgrader's addCustom(upgradeRequestHeaders:) to inject
+						// its own Sec-WebSocket-Key. Adding our own key here caused a
+						// Sec-WebSocket-Accept mismatch during shouldAllowUpgrade,
+						// silently failing the upgrade and hanging until timeout.
 
 					var path = url.path
 					if path.isEmpty { path = "/" }
@@ -207,19 +242,37 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 					channel.write(HTTPClientRequestPart.head(requestHead), promise: nil)
 					channel.writeAndFlush(HTTPClientRequestPart.end(nil), promise: nil)
 
-					promise.succeed(channel)
+						// Do NOT succeed the connect promise here — the HTTP request has
+						// only been written, the WebSocket upgrade has not completed yet.
+						// Resolving early lets callers treat a still-HTTP channel as a
+						// ready WebSocket, which crashes when a WS frame is later written
+						// onto a pipeline that still has the HTTP codec installed.
+						// The promise is now completed by FlowWebSocketUpgradeEvent
+						// handling below, once the upgrade genuinely finishes.
 
 				case .failure(let error):
 					promise.fail(error)
 			}
 		}
 
-		return try await promise.futureResult.get()
+		return try await withThrowingTaskGroup(of: Channel.self) { group in
+			group.addTask {
+				try await promise.futureResult.get()
+			}
+			group.addTask {
+				try await _Concurrency.Task.sleep(nanoseconds: 10_000_000_000)
+				promise.fail(Flow.FError.customError(msg: "WebSocket connect timed out after 10s"))
+				throw Flow.FError.customError(msg: "WebSocket connect timed out after 10s")
+			}
+			defer { group.cancelAll() }
+			return try await group.next()!
+		}
 	}
 
 	private static func addHTTPAndWebSocketHandlers(
 		to channel: Channel,
-		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?
+		onEnvelope: (@Sendable (Flow.WebSocketEnvelope) -> Void)?,
+		upgradePromise: EventLoopPromise<Channel>
 	) -> EventLoopFuture<Void> {
 		let websocketUpgrader = NIOWebSocketClientUpgrader(
 			maxFrameSize: 1 << 24,
@@ -233,6 +286,11 @@ public final class FlowNIOWebSocketClient: @unchecked Sendable {
 			completionHandler: { context in
 				context.fireUserInboundEventTriggered(FlowWebSocketUpgradeEvent.upgraded)
 				context.channel.read()
+					// The upgrade has now genuinely completed and the HTTP codec has
+					// been removed from the pipeline by addHTTPClientHandlers — only
+					// now is it safe to hand the channel back to callers as a ready
+					// WebSocket connection.
+				upgradePromise.succeed(context.channel)
 			}
 		)
 

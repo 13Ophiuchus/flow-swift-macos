@@ -768,7 +768,7 @@ struct CadenceTypeTests {
 				fileID: String(describing: file),
 				filePath: String(describing: file),
 				line: Int(line),
-				column: 0
+				column: 1
 			)
 		)
 	}

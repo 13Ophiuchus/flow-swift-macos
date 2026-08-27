@@ -79,12 +79,15 @@ public enum UserAgent {
 	}()
 
 		/// eg. iOS/10.1 or macOS/14.2.1
+	// PATCHED: main-actor isolation fix for Swift 6 strict concurrency
 	static let deviceVersion: String = {
 #if os(iOS)
-		let currentDevice = UIDevice.current
-		let name = currentDevice.systemName.isEmpty ? "iOS" : currentDevice.systemName
-		let version = currentDevice.systemVersion.isEmpty ? "0.0" : currentDevice.systemVersion
-		return "\(name)/\(version)"
+		return MainActor.assumeIsolated {
+			let currentDevice = UIDevice.current
+			let name = currentDevice.systemName.isEmpty ? "iOS" : currentDevice.systemName
+			let version = currentDevice.systemVersion.isEmpty ? "0.0" : currentDevice.systemVersion
+			return "\(name)/\(version)"
+		}
 #elseif os(macOS)
 		let info = ProcessInfo.processInfo
 		let major = info.operatingSystemVersion.majorVersion
@@ -95,6 +98,7 @@ public enum UserAgent {
 		return "unknownOS/0.0"
 #endif
 	}()
+	// END PATCHED BLOCK
 
 		/// eg. iPhone5,2 or Mac model identifier
 	static let deviceName: String = {

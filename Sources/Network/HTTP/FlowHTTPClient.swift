@@ -212,10 +212,10 @@ public actor FlowHTTPAPI: FlowAccessProtocol {
 	public func sendTransaction(
 		transaction: Flow.Transaction
 	) async throws -> Flow.ID {
-		let result: Flow.TransactionResult = try await request(
+		let result: Flow.TransactionIdResponse = try await request(
 			Flow.AccessEndpoint.sendTransaction(transaction: transaction)
 		)
-		return result.blockId
+		return result.id
 	}
 
 	public func getTransactionById(id: Flow.ID) async throws -> Flow.Transaction {

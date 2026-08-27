@@ -18,7 +18,17 @@
 	//  Reviewed and updated for Swift 6 concurrency by Nicholas Reich on 2026-03-19.
 	//
 
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
 import SwiftUI
+#endif
+#endif
+#endif
+#endif
+#endif
 
 	/// Flow Block Model
 	///

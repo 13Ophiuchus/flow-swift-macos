@@ -39,7 +39,7 @@ extension Flow {
 
 		let response = try await api.executeScriptAtLatestBlock(
 			script: script,
-			arguments: target.arguments as! [Flow.Cadence.FValue] 
+			arguments: target.arguments.map { $0.value }
 		)
 
 		return try response.decode()

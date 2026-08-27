@@ -6,7 +6,17 @@
 	//
 
 import BigInt
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
 import SwiftUI
+#endif
+#endif
+#endif
+#endif
+#endif
 
 public extension Flow {
 		/// The argument for Cadence code for encoding and decoding.

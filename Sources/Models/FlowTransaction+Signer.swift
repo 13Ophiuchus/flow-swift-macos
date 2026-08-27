@@ -32,7 +32,17 @@
 	/// try await transaction.sign(signers: [proposer, authorizer, payer])
 	/// ```
 
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
 import SwiftUI
+#endif
+#endif
+#endif
+#endif
+#endif
 
 public extension Flow {
 		/// Sign the unsigned transaction with a list of `FlowSigner`

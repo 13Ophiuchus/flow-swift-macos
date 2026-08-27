@@ -17,7 +17,17 @@
 	//
 	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 import Foundation
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
 import SwiftUI
+#endif
+#endif
+#endif
+#endif
+#endif
 
 public extension String {
 		/// Convert hex string to bytes

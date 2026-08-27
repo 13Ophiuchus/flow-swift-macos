@@ -52,23 +52,69 @@ public extension Flow {
 		private enum CodingKeys: String, CodingKey {
 			case type
 			case transactionId = "transaction_id"
+			case transactionIdCamel = "transactionId"
 			case transactionIndex = "transaction_index"
+			case transactionIndexCamel = "transactionIndex"
 			case eventIndex = "event_index"
+			case eventIndexCamel = "eventIndex"
 			case payload
+		}
+
+			// Tries String-then-Int decoding for either of two possible keys,
+			// tolerating type mismatches on a present key (not just absence),
+			// since decodeIfPresent alone throws on wrong-type-but-present values.
+		private static func decodeFlexibleInt(
+			_ container: KeyedDecodingContainer<CodingKeys>,
+			snakeKey: CodingKeys,
+			camelKey: CodingKeys
+		) throws -> Int {
+			if let s = try? container.decodeIfPresent(String.self, forKey: snakeKey), let v = Int(s) {
+				return v
+			}
+			if let v = try? container.decodeIfPresent(Int.self, forKey: snakeKey) {
+				return v
+			}
+			if let s = try? container.decodeIfPresent(String.self, forKey: camelKey), let v = Int(s) {
+				return v
+			}
+			if let v = try? container.decodeIfPresent(Int.self, forKey: camelKey) {
+				return v
+			}
+			return -1
 		}
 
 		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 			self.type = try container.decode(String.self, forKey: .type)
-			self.transactionId = try container.decode(Flow.ID.self, forKey: .transactionId)
 
-			let transactionIndexString = try container.decode(String.self, forKey: .transactionIndex)
-			self.transactionIndex = Int(transactionIndexString) ?? -1
+				// Websocket uses snake_case (transaction_id); REST API uses
+				// camelCase (transactionId). Support both wire formats.
+			if let txId = try? container.decodeIfPresent(Flow.ID.self, forKey: .transactionId) {
+				self.transactionId = txId
+			} else {
+				self.transactionId = try container.decode(Flow.ID.self, forKey: .transactionIdCamel)
+			}
 
-			let eventIndexString = try container.decode(String.self, forKey: .eventIndex)
-			self.eventIndex = Int(eventIndexString) ?? -1
+			self.transactionIndex = try Self.decodeFlexibleInt(
+				container, snakeKey: .transactionIndex, camelKey: .transactionIndexCamel
+			)
+			self.eventIndex = try Self.decodeFlexibleInt(
+				container, snakeKey: .eventIndex, camelKey: .eventIndexCamel
+			)
 
 			self.payload = try container.decode(Flow.Event.Payload.self, forKey: .payload)
+		}
+
+			// CodingKeys has extra camelCase aliases beyond the stored
+			// properties (for dual-format decoding), so Encodable can't be
+			// synthesized. Always encode using the canonical snake_case keys.
+		public func encode(to encoder: Encoder) throws {
+			var container = encoder.container(keyedBy: CodingKeys.self)
+			try container.encode(type, forKey: .type)
+			try container.encode(transactionId, forKey: .transactionId)
+			try container.encode(String(transactionIndex), forKey: .transactionIndex)
+			try container.encode(String(eventIndex), forKey: .eventIndex)
+			try container.encode(payload, forKey: .payload)
 		}
 
 			/// Event result including block context.

@@ -12,7 +12,7 @@ import Testing
 
 
 
-@Suite
+@Suite(.serialized)
 @FlowActor
 struct CadenceTargetTestnetTests {
 	init() async {

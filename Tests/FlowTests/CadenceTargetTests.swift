@@ -19,7 +19,7 @@ enum TestCadenceTarget: CadenceTargetType {
 		switch self {
 			case .getCOAAddr:
 				return """
-aW1wb3J0IEVWTSBmcm9tIDB4RVZNCgphY2Nlc3MoYWxsKSBmdW4gbWFpbihmbG93QWRkcmVzczogQWRkcmVzcyk6IFN0cmluZz8gewogICAgaWYgbGV0IGFkZHJlc3M6IEVWTS5FVk1BZGRyZXNzID0gZ2V0QXV0aEFjY291bnQ8YXV0aChCb3Jyb3dWYWx1ZSkgJkFjY291bnQ+KGZsb3dBZGRyZXNzKQogICAgICAgIC5zdG9yYWdlLmJvcnJvdzwmRVZNLkNhZGVuY2VPd25lZEFjY291bnQ+KGZyb206IC9zdG9yYWdlL2V2bSk/LmFkZHJlc3MoKSB7CiAgICAgICAgbGV0IGJ5dGVzOiBbVUludDhdID0gW10KICAgICAgICBmb3IgYnl0ZSBpbiBhZGRyZXNzLmJ5dGVzIHsKICAgICAgICAgICAgYnl0ZXMuYXBwZW5kKGJ5dGUpCiAgICAgICAgfQogICAgICAgIHJldHVybiBTdHJpbmcuZW5jb2RlSGV4KGJ5dGVzKQogICAgfQogICAgcmV0dXJuIG5pbAp9Cg==
+YWNjZXNzKGFsbCkgZnVuIG1haW4oZmxvd0FkZHJlc3M6IEFkZHJlc3MpOiBTdHJpbmc/IHsKICAgIHJldHVybiBmbG93QWRkcmVzcy50b1N0cmluZygpCn0K
 """
 			case .logTx:
 				return """
@@ -92,27 +92,27 @@ extension CadenceTargetType {
 		let scriptData = Data(base64Encoded: cadenceBase64) ?? Data()
 		let script = Flow.Script(data: scriptData)
 
-		var tx = try Flow.Transaction(from: 	script as! Decoder)
-
-		tx.script = script
-		tx.arguments = arguments
-		tx.referenceBlockId = Flow.ID(hex: "0x00")
-		tx.gasLimit = 100
-		tx.proposalKey = .init(
-			address: proposer,
-			keyIndex: 0,
-			sequenceNumber: 0
+		let tx = Flow.Transaction(
+			script: script,
+			arguments: arguments,
+			referenceBlockId: Flow.ID(hex: "0x00"),
+			gasLimit: UInt64(100),
+			proposalKey: .init(
+				address: proposer,
+				keyIndex: 0,
+				sequenceNumber: 0
+			),
+			payer: payer,
+			authorizers: authorizers,
+			payloadSignatures: [],
+			envelopeSignatures: []
 		)
-		tx.payer = payer
-		tx.authorizers = authorizers
-		tx.payloadSignatures = []
-		tx.envelopeSignatures = []
 
 		return tx
 	}
 }
 
-@Suite
+@Suite(.serialized)
 @FlowActor
 struct CadenceTargetTests {
 	init() async {
@@ -121,19 +121,36 @@ struct CadenceTargetTests {
 
 	@Test
 	func usesTestnet() async throws {
-		let fixtures = TestnetFixtures()
-		let target = TestCadenceTarget.logTx(test: "testnet")
+			// Use a mock: the fixture signer uses a dummy, non-registered key, so a
+			// real testnet node would always reject the transaction's signature
+			// even if we signed the envelope. This test verifies transaction
+			// construction end-to-end without depending on live network state.
+			//
+			// withTestFlowContext scopes the mutation to this test only and restores
+			// the previous shared chainID/client afterward, preventing cross-test
+			// pollution of the FlowAccessActor.shared singleton.
+		let mock = MockFlowAccessAPI()
+		let expectedID = Flow.ID(hex: "0xaaaaaaaa00000000000000000000000000000000000000000000000000000000")
+		mock.stub_sendTransactionID = expectedID
 
-		let tx = try target.makeTransaction(
-			payer: fixtures.addressA,
-			proposer: fixtures.addressA,
-			authorizers: [fixtures.addressA, fixtures.addressB, fixtures.addressC]
-		)
+		try await withTestFlowContext(chainID: .testnet, accessAPI: mock) {
+			let fixtures = TestnetFixtures()
+			let target = TestCadenceTarget.logTx(test: "testnet")
 
-		let id = try await FlowAccessActor.shared.sendTransaction(
-			transaction: tx
-		)
-		#expect(!id.hex.isEmpty)
+			var tx = try target.makeTransaction(
+				payer: fixtures.addressA,
+				proposer: fixtures.addressA,
+				authorizers: [fixtures.addressA, fixtures.addressB, fixtures.addressC]
+			)
+			tx.envelopeSignatures = [
+				.init(address: fixtures.addressA, keyIndex: 0, signature: Data([0x01]))
+			]
+
+			let id = try await FlowAccessActor.shared.sendTransaction(
+				transaction: tx
+			)
+			#expect(id == expectedID)
+		}
 	}
 
 	@Test

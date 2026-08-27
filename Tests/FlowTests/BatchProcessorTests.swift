@@ -86,9 +86,13 @@ struct BatchProcessorTests {
 
 		let result: [Int: Int] = try await sut.process(inputs, maxConcurrent: maxConcurrent) { value in
 			await tracker.begin()
-			defer { _Concurrency.Task { await tracker.end() } }
-
-			try await _Concurrency.Task.sleep(nanoseconds: 50_000_000)
+			do {
+				try await _Concurrency.Task.sleep(nanoseconds: 50_000_000)
+			} catch {
+				await tracker.end()
+				throw error
+			}
+			await tracker.end()
 			return value * 10
 		}
 
@@ -199,9 +203,13 @@ struct BatchProcessorTests {
 
 		let _: [Int: Result<Int, Error>] = await sut.processSafely(Array(0..<10), maxConcurrent: 2) { value in
 			await tracker.begin()
-			defer { _Concurrency.Task { await tracker.end() } }
-
-			try await _Concurrency.Task.sleep(nanoseconds: 40_000_000)
+			do {
+				try await _Concurrency.Task.sleep(nanoseconds: 40_000_000)
+			} catch {
+				await tracker.end()
+				throw error
+			}
+			await tracker.end()
 			return value
 		}
 

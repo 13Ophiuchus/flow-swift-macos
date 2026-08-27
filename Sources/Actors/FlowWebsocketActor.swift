@@ -38,16 +38,13 @@ public extension Flow {
 
 			// MARK: - Connection
 
-		public func connect(to url: URL) {
-			_Concurrency.Task { [weak self] in
-				guard let self else { return }
-				do {
-					try await FlowWebSocketCenter.shared.connectIfNeeded()
-					await self.setConnected(true)
-				} catch {
-					await self.sendError(error)
-				}
-			}
+			// Must actually await the connection handshake — callers (like
+			// live integration tests) immediately subscribe afterward and
+			// need a guarantee the socket is ready, not just that this
+			// method was entered.
+		public func connect(to url: URL) async throws {
+			try await FlowWebSocketCenter.shared.connectIfNeeded()
+			await self.setConnected(true)
 		}
 
 		public func disconnect() {

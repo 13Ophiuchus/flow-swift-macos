@@ -8,7 +8,17 @@
 	//
 
 import Foundation
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
+#if canImport(SwiftUI)
 import SwiftUI
+#endif
+#endif
+#endif
+#endif
+#endif
 
 protocol MirrorAssociated {
 	var associatedValues: [String: FlowEncodable] { get }

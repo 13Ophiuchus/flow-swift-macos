@@ -9,7 +9,7 @@
 import Testing
 @testable import Flow
 
-@Suite
+@Suite(.serialized)
 struct CadenceTargetMainnetTests {
 
 	private let flow = Flow()

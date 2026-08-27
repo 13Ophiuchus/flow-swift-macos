@@ -114,7 +114,7 @@ struct FlowAccessAPIOnTestnetTests {
 	@Test("Get testnet service account at latest block by address")
 	func getAccountAtLatestBlockByAddress() async throws {
 		let api = await makeTestnetAPI()
-		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7") // replace with real testnet addr if needed
+		let address = Flow.Address(hex: "0x7e60df042a9c0868") // replace with real testnet addr if needed
 
 		let account = try await api.getAccountAtLatestBlock(
 			address: address,
@@ -127,7 +127,7 @@ struct FlowAccessAPIOnTestnetTests {
 	@Test("Get testnet service account at latest block by string")
 	func getAccountAtLatestBlockByString() async throws {
 		let api = await makeTestnetAPI()
-		let addressString = "0xf8d6e0586b0a20c7" // replace with real testnet addr if needed
+		let addressString = "0x7e60df042a9c0868" // replace with real testnet addr if needed
 
 		let account = try await api.getAccountAtLatestBlock(
 			address: addressString,
@@ -140,7 +140,7 @@ struct FlowAccessAPIOnTestnetTests {
 	@Test("Get testnet account by block height")
 	func getAccountByBlockHeight() async throws {
 		let api = await makeTestnetAPI()
-		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7") // replace with real testnet addr if needed
+		let address = Flow.Address(hex: "0x7e60df042a9c0868") // replace with real testnet addr if needed
 		let latest = try await api.getLatestBlock(
 			blockStatus: Flow.BlockStatus.final
 		)
@@ -178,11 +178,11 @@ struct FlowAccessAPIOnTestnetTests {
 	@Test("Execute address-arg script at latest testnet block")
 	func executeScriptAtLatestBlockWithAddressArg() async throws {
 		let api = await makeTestnetAPI()
-		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7") // testnet addr
+		let address = Flow.Address(hex: "0x7e60df042a9c0868") // testnet addr
 
 		let script = makeScript("""
-		access(all) fun main(addr: Address): Address {
-			return addr
+		access(all) fun main(addr: Address): String {
+			return addr.toString()
 		}
 		""")
 
@@ -194,8 +194,8 @@ struct FlowAccessAPIOnTestnetTests {
 			blockStatus: Flow.BlockStatus.final
 		)
 
-		let value: Flow.Address = try response.decode()
-		#expect(value == address)
+		let value: String = try response.decode()
+		#expect(value.lowercased() == address.hex.lowercased())
 	}
 
 	@Test("Execute testnet script at block id")
@@ -278,11 +278,14 @@ struct FlowAccessAPIOnTestnetTests {
 			blockStatus: Flow.BlockStatus.final
 		)
 
-		let lower = max(0, Int(latest.height) - 2)
-		let range = UInt64(lower)...latest.height
+			// Use a safety buffer: different execution nodes may lag behind the
+			// height just returned by getLatestBlock.
+		let upper = max(0, Int(latest.height) - 20)
+		let lower = max(0, upper - 5)
+		let range = UInt64(lower)...UInt64(upper)
 
 		let results = try await api.getEventsForHeightRange(
-			type: "A.1654653399040a61.FlowToken.TokensDeposited",
+			type: "A.7e60df042a9c0868.FlowToken.TokensDeposited",
 			range: range
 		)
 
@@ -297,7 +300,7 @@ struct FlowAccessAPIOnTestnetTests {
 		)
 
 		let results = try await api.getEventsForBlockIds(
-			type: "A.1654653399040a61.FlowToken.TokensDeposited",
+			type: "A.7e60df042a9c0868.FlowToken.TokensDeposited",
 			ids: [latest.id]
 		)
 

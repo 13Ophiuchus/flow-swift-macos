@@ -227,8 +227,9 @@ public extension Flow {
 			throw Flow.FError.emptyProposer
 		}
 
-			// Build a fresh HTTP client for the current chain rather than using a shared one.
-		let httpAPI = FlowHTTPAPI(chainID: chainID) as FlowAccessProtocol
+			// Use the actor-configured client so injected mocks (tests) and the
+			// real HTTP client (production) are both respected consistently.
+		let httpAPI = await FlowActors.access.currentClient
 
 		await FlowLogger.shared.logAsync(.debug, message: "Resolving reference block ID")
 		let id = try await resolveBlockId(api: httpAPI, refBlock: refBlock)
@@ -346,7 +347,7 @@ public extension Flow {
 		chainID: Flow.ChainID,
 		signedTransaction: Flow.Transaction
 	) async throws -> Flow.ID {
-		let api = FlowHTTPAPI(chainID: chainID) as FlowAccessProtocol
+		let api = await FlowActors.access.currentClient
 		return try await api.sendTransaction(transaction: signedTransaction)
 	}
 

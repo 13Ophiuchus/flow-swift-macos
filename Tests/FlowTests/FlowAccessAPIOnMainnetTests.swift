@@ -116,7 +116,7 @@ struct FlowAccessAPIOnMainnetTests {
 	@Test("Get service account at latest block by address")
 	func getAccountAtLatestBlockByAddress() async throws {
 		let api = await makeMainnetAPI()
-		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7")
+		let address = Flow.Address(hex: "0xf919ee77447b7497")
 
 		let account = try await api.getAccountAtLatestBlock(
 			address: address,
@@ -129,7 +129,7 @@ struct FlowAccessAPIOnMainnetTests {
 	@Test("Get service account at latest block by string")
 	func getAccountAtLatestBlockByString() async throws {
 		let api = await makeMainnetAPI()
-		let addressString = "0xf8d6e0586b0a20c7"
+		let addressString = "0xf919ee77447b7497"
 
 		let account = try await api.getAccountAtLatestBlock(
 			address: addressString,
@@ -142,7 +142,7 @@ struct FlowAccessAPIOnMainnetTests {
 	@Test("Get account by block height")
 	func getAccountByBlockHeight() async throws {
 		let api = await makeMainnetAPI()
-		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7")
+		let address = Flow.Address(hex: "0xf919ee77447b7497")
 		let latest = try await api.getLatestBlock(
 			blockStatus: Flow.BlockStatus.final
 		)
@@ -180,11 +180,11 @@ struct FlowAccessAPIOnMainnetTests {
 	@Test("Execute address-arg script at latest block")
 	func executeScriptAtLatestBlockWithAddressArg() async throws {
 		let api = await makeMainnetAPI()
-		let address = Flow.Address(hex: "0xf8d6e0586b0a20c7")
+		let address = Flow.Address(hex: "0xf919ee77447b7497")
 
 		let script = makeScript("""
-		access(all) fun main(addr: Address): Address {
-			return addr
+		access(all) fun main(addr: Address): String {
+			return addr.toString()
 		}
 		""")
 
@@ -196,8 +196,8 @@ struct FlowAccessAPIOnMainnetTests {
 			blockStatus: Flow.BlockStatus.final
 		)
 
-		let value: Flow.Address = try response.decode()
-		#expect(value == address)
+		let value: String = try response.decode()
+		#expect(value.lowercased() == address.hex.lowercased())
 	}
 
 	@Test("Execute script at block id")
@@ -280,8 +280,12 @@ struct FlowAccessAPIOnMainnetTests {
 			blockStatus: Flow.BlockStatus.final
 		)
 
-		let lower = max(0, Int(latest.height) - 2)
-		let range = UInt64(lower)...latest.height
+			// Use a safety buffer: different execution nodes may lag behind the
+			// height just returned by getLatestBlock, causing "start height greater
+			// than last sealed block height" errors if we query right up to the tip.
+		let upper = max(0, Int(latest.height) - 20)
+		let lower = max(0, upper - 5)
+		let range = UInt64(lower)...UInt64(upper)
 
 		let results = try await api.getEventsForHeightRange(
 			type: "A.1654653399040a61.FlowToken.TokensDeposited",

@@ -25,6 +25,9 @@ public actor FlowAccessActor {
 		} else {
 			self.client = FlowHTTPAPI(chainID: chainID)
 		}
+			// Keep FlowConfigActor's chainID in sync, since Flow.chainID and other
+			// call sites read from FlowActors.config rather than this actor.
+		await FlowActors.config.updateChainID(chainID)
 	}
 
 	public var currentClient: any FlowAccessProtocol {

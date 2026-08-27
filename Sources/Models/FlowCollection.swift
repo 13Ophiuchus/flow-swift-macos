@@ -62,9 +62,22 @@ public extension Flow {
 		public let collectionId: Flow.ID
 		public let signerIds: [Flow.ID]
 
+		enum CodingKeys: String, CodingKey {
+			case collectionId
+			case signerIds
+		}
+
 		public init(collectionId: Flow.ID, signerIds: [Flow.ID]) {
 			self.collectionId = collectionId
 			self.signerIds = signerIds
+		}
+
+		public init(from decoder: Decoder) throws {
+			let container = try decoder.container(keyedBy: CodingKeys.self)
+			collectionId = try container.decode(Flow.ID.self, forKey: .collectionId)
+				// Some Flow API responses (e.g. current mainnet REST/gRPC block payloads)
+				// omit signerIds entirely. Default to an empty array for compatibility.
+			signerIds = try container.decodeIfPresent([Flow.ID].self, forKey: .signerIds) ?? []
 		}
 	}
 }

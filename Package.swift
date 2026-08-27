@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
 	name: "Flow",
 	platforms: [
-		.iOS(.v15),
+		.iOS(.v16),
 		.macOS(.v13),
 	],
 	products: [
@@ -16,6 +16,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-async-algorithms", from: "1.1.3"),
 		.package(url: "https://github.com/apple/swift-nio.git", from: "2.67.0"),
 		.package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.26.0"),
+		.package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.8.0"),
 	],
 	targets: [
 		.target(
@@ -28,6 +29,7 @@ let package = Package(
 				.product(name: "NIOHTTP1", package: "swift-nio"),
 				.product(name: "NIOWebSocket", package: "swift-nio"),
 				.product(name: "NIOSSL", package: "swift-nio-ssl"),
+				.product(name: "CryptoSwift", package: "CryptoSwift"),
 			],
 			path: "Sources",
 			resources: [
