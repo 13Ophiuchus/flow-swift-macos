@@ -7,9 +7,13 @@
 
 import Foundation
 #if os(iOS)
+#if canImport(UIKit)
 import UIKit
+#endif
 #elseif os(macOS)
+#if canImport(AppKit)
 import AppKit
+#endif
 #endif
 
 	/// Unified, safe user agent generator for the Flow SDK.
