@@ -18,7 +18,11 @@
 	//  Reviewed for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 	//
 
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 
 import Foundation
 

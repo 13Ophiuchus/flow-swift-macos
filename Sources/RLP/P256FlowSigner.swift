@@ -8,7 +8,11 @@
 import Foundation
 import CryptoSwift
 #if canImport(CryptoKit)
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 #endif
 
 
