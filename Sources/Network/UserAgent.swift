@@ -8,11 +8,15 @@
 import Foundation
 #if os(iOS)
 #if canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
+#endif
 #endif
 #elseif os(macOS)
 #if canImport(AppKit)
+#if canImport(AppKit)
 import AppKit
+#endif
 #endif
 #endif
 
