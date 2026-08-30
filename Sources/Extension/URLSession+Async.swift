@@ -6,6 +6,9 @@
 	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 #if canImport(SwiftUI)
 #if canImport(SwiftUI)
 #if canImport(SwiftUI)

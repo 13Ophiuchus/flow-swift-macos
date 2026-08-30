@@ -66,16 +66,20 @@ public enum UserAgent {
 		// MARK: - Low-level system tokens
 
 		/// eg. Darwin/16.3.0
+#if !os(Linux)
 	static let darwinVersion: String = {
 		var sysinfo = utsname()
 		uname(&sysinfo)
-		let data = Data(bytes: &sysinfo.release, count: Int(_SYS_NAMELEN))
+		let data = Data(bytes: &sysinfo.release, count: MemoryLayout.size(ofValue: sysinfo.release))
 		let dv = String(data: data, encoding: .ascii)?
 			.trimmingCharacters(in: .controlCharacters)
 			.trimmingCharacters(in: .whitespacesAndNewlines)
 
 		return "Darwin/\((dv?.isEmpty == false) ? dv! : "unknown")"
 	}()
+#else
+	static let darwinVersion: String = "Linux/unknown"
+#endif
 
 		/// eg. CFNetwork/808.3
 	static let cfNetworkVersion: String = {
@@ -112,7 +116,7 @@ public enum UserAgent {
 	static let deviceName: String = {
 		var sysinfo = utsname()
 		uname(&sysinfo)
-		let data = Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN))
+		let data = Data(bytes: &sysinfo.machine, count: MemoryLayout.size(ofValue: sysinfo.machine))
 		let name = String(data: data, encoding: .ascii)?
 			.trimmingCharacters(in: .controlCharacters)
 			.trimmingCharacters(in: .whitespacesAndNewlines)

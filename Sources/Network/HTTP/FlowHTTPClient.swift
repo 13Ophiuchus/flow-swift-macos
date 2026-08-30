@@ -7,6 +7,9 @@
 	//
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 	/// HTTP implementation of the Flow access API, using URLSession.
 	/// Concurrency-safe via actor isolation.
