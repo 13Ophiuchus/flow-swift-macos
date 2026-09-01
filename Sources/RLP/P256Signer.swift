@@ -19,13 +19,7 @@
 	//
 
 #if canImport(CryptoKit)
-#if canImport(CryptoKit)
-#if canImport(CryptoKit)
 import CryptoKit
-#endif
-#else
-import Crypto
-#endif
 #else
 import Crypto
 #endif
@@ -33,6 +27,7 @@ import Crypto
 import Foundation
 
 struct ECDSA_P256_Signer: FlowSigner {
+
 	var address: Flow.Address
 	var keyIndex: Int
 	var hashAlgo: Flow.HashAlgorithm = .SHA2_256
