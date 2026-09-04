@@ -26,14 +26,14 @@ import Crypto
 
 import Foundation
 
-struct ECDSA_P256_Signer: FlowSigner {
+struct ECDSA_P256_Signer: FlowSigner, Sendable {
 
 	var address: Flow.Address
 	var keyIndex: Int
 	var hashAlgo: Flow.HashAlgorithm = .SHA2_256
 	var signatureAlgo: Flow.SignatureAlgorithm = .ECDSA_P256
 
-	var privateKey: P256.Signing.PrivateKey
+	let privateKey: P256.Signing.PrivateKey
 
 	init(address: Flow.Address, keyIndex: Int, privateKey: P256.Signing.PrivateKey) {
 		self.address = address
