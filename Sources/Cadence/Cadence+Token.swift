@@ -37,7 +37,7 @@ public extension Flow {
 		)
 
 			// Hop to the FlowAccessActor and call the async accessor correctly.
-		let accessAPI = await FlowAccessActor.shared.currentClient()
+		let accessAPI = await FlowAccessActor.shared.currentClient
 
 		let response = try await accessAPI.executeScriptAtLatestBlock(
 			script: Flow.Script(text: scriptSource),

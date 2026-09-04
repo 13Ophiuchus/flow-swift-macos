@@ -17,6 +17,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-nio.git", from: "2.67.0"),
 		.package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.26.0"),
 		.package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.8.0"),
+		.package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
 	],
 	targets: [
 		.target(
@@ -30,6 +31,7 @@ let package = Package(
 				.product(name: "NIOWebSocket", package: "swift-nio"),
 				.product(name: "NIOSSL", package: "swift-nio-ssl"),
 				.product(name: "CryptoSwift", package: "CryptoSwift"),
+				.product(name: "Crypto", package: "swift-crypto"),
 			],
 			path: "Sources",
 			resources: [
