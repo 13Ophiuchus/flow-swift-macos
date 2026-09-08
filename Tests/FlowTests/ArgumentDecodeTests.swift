@@ -33,7 +33,7 @@ struct TestEventType: Codable, Sendable {
 	}
 }
 
-@Suite
+@Suite(.serialized)
 @FlowActor
 struct ArgumentDecodeTests {
 

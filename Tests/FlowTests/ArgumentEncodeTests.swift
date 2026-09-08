@@ -24,7 +24,7 @@
 import Testing
 import Foundation
 
-@Suite
+@Suite(.serialized)
 struct ArgumentEncodeTests {
 	@Test("Encode Int array to Cadence JSON")
 	func encodeIntType() {
