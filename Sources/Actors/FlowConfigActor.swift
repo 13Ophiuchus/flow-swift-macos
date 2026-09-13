@@ -5,21 +5,20 @@
 //  Created by Nicholas Reich on 3/21/26.
 //
 
-
 //
 //  FlowConfigActor.swift
 //
 
-	// FlowConfigActor.swift
+// FlowConfigActor.swift
 
 public actor FlowConfigActor: Sendable {
-	public static let shared = FlowConfigActor()
+    public static let shared = FlowConfigActor()
 
-	public private(set) var chainID: Flow.ChainID = .mainnet
+    public private(set) var chainID: Flow.ChainID = .mainnet
 
-	public init() {}
+    public init() {}
 
-	public func updateChainID(_ newValue: Flow.ChainID) {
-		chainID = newValue
-	}
+    public func updateChainID(_ newValue: Flow.ChainID) {
+        chainID = newValue
+    }
 }

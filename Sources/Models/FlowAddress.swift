@@ -1,112 +1,111 @@
-	//
-	//  FlowAddress
-	//
-	//  Copyright 2022 Outblock Pty Ltd
-	//
-	//  Licensed under the Apache License, Version 2.0 (the "License");
-	//  you may not use this file except in compliance with the License.
-	//  You may obtain a copy of the License at
-	//
-	//    http://www.apache.org/licenses/LICENSE-2.0
-	//
-	//  Unless required by applicable law or agreed to in writing, software
-	//  distributed under the License is distributed on an "AS IS" BASIS,
-	//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	//  See the License for the specific language governing permissions and
-	//  limitations under the License.
-	//
-	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+//
+//  FlowAddress
+//
+//  Copyright 2022 Outblock Pty Ltd
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 
 import Foundation
+
 #if canImport(SwiftUI)
-#if canImport(SwiftUI)
-#if canImport(SwiftUI)
-#if canImport(SwiftUI)
-#if canImport(SwiftUI)
-import SwiftUI
-#endif
-#endif
-#endif
-#endif
+    #if canImport(SwiftUI)
+        #if canImport(SwiftUI)
+            #if canImport(SwiftUI)
+                #if canImport(SwiftUI)
+                    import SwiftUI
+                #endif
+            #endif
+        #endif
+    #endif
 #endif
 
 public extension Flow {
+    /// Flow Address Model
+    ///
+    /// Represents account addresses on the Flow blockchain.
+    /// Handles address formatting, validation, and conversion.
+    ///
+    /// Features:
+    /// - Hex string parsing
+    /// - Address validation
+    /// - String representation
+    /// - Equatable comparison
+    ///
+    /// Example usage:
+    /// ```swift
+    /// let address = Flow.Address(hex: "0x1234")
+    /// let account = try await flow.getAccountAtLatestBlock(address: address)
+    /// ```
 
-		/// Flow Address Model
-		///
-		/// Represents account addresses on the Flow blockchain.
-		/// Handles address formatting, validation, and conversion.
-		///
-		/// Features:
-		/// - Hex string parsing
-		/// - Address validation
-		/// - String representation
-		/// - Equatable comparison
-		///
-		/// Example usage:
-		/// ```swift
-		/// let address = Flow.Address(hex: "0x1234")
-		/// let account = try await flow.getAccountAtLatestBlock(address: address)
-		/// ```
+    struct Address: FlowEntity, Equatable, Hashable, Codable, CustomStringConvertible {
+        /// Flow address size in bytes.
+        public static let byteLength = 8
 
-	struct Address: FlowEntity, Equatable, Hashable, Codable, CustomStringConvertible {
+        /// Raw address bytes.
+        public var data: Data
 
-			/// Flow address size in bytes.
-		public static let byteLength = 8
+        /// Hexadecimal string representation with `0x` prefix.
+        public var hex: String {
+            data.hexValue.addHexPrefix()
+        }
 
-			/// Raw address bytes.
-		public var data: Data
+        // MARK: - Initializers
 
-			/// Hexadecimal string representation with `0x` prefix.
-		public var hex: String {
-			data.hexValue.addHexPrefix()
-		}
+        public init(hex: String) {
+            let stripped = hex.stripHexPrefix()
+            let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
+            self.init(data: padded.hexValue.data)
+        }
 
-			// MARK: - Initializers
+        public init(_ hex: String) {
+            let stripped = hex.stripHexPrefix()
+            let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
+            self.init(data: padded.hexValue.data)
+        }
 
-		public init(hex: String) {
-			let stripped = hex.stripHexPrefix()
-			let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
-			self.init(data: padded.hexValue.data)
-		}
+        public init(data: Data) {
+            if data.bytes.count == Flow.Address.byteLength {
+                self.data = data
+            } else {
+                self.data = data
+                    .paddingZeroLeft(blockSize: Flow.Address.byteLength)
+                    .prefix(Flow.Address.byteLength)
+            }
+        }
 
-		public init(_ hex: String) {
-			let stripped = hex.stripHexPrefix()
-			let padded = stripped.count % 2 == 0 ? stripped : "0" + stripped
-			self.init(data: padded.hexValue.data)
-		}
+        public init(bytes: [UInt8]) {
+            self.init(data: bytes.data)
+        }
 
-		public init(data: Data) {
-			if data.bytes.count == Flow.Address.byteLength {
-				self.data = data
-			} else {
-				self.data = data
-					.paddingZeroLeft(blockSize: Flow.Address.byteLength)
-					.prefix(Flow.Address.byteLength)
-			}
-		}
+        // MARK: - Codable
 
-		public init(bytes: [UInt8]) {
-			self.init(data: bytes.data)
-		}
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+            self.init(hex: string)
+        }
 
-			// MARK: - Codable
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(hex.addHexPrefix())
+        }
 
-		public init(from decoder: Decoder) throws {
-			let container = try decoder.singleValueContainer()
-			let string = try container.decode(String.self)
-			self.init(hex: string)
-		}
+        // MARK: - CustomStringConvertible
 
-		public func encode(to encoder: Encoder) throws {
-			var container = encoder.singleValueContainer()
-			try container.encode(hex.addHexPrefix())
-		}
-
-			// MARK: - CustomStringConvertible
-
-		public var description: String {
-			hex.addHexPrefix()
-		}
-	}
+        public var description: String {
+            hex.addHexPrefix()
+        }
+    }
 }

@@ -7,26 +7,26 @@
 //  of the shared actor singleton (chainID + accessAPI client).
 //
 
-import Foundation
 @testable import Flow
+import Foundation
 
 @FlowActor
 func withTestFlowContext<T>(
-	chainID: Flow.ChainID,
-	accessAPI: (any FlowAccessProtocol)? = nil,
-	_ body: () async throws -> T
+    chainID: Flow.ChainID,
+    accessAPI: (any FlowAccessProtocol)? = nil,
+    _ body: () async throws -> T
 ) async throws -> T {
-	let originalChainID = await FlowActors.config.chainID
-	let originalClient = await FlowActors.access.currentClient
+    let originalChainID = await FlowActors.config.chainID
+    let originalClient = await FlowActors.access.currentClient
 
-	await FlowActors.access.configure(chainID: chainID, accessAPI: accessAPI)
+    await FlowActors.access.configure(chainID: chainID, accessAPI: accessAPI)
 
-	do {
-		let result = try await body()
-		await FlowActors.access.configure(chainID: originalChainID, accessAPI: originalClient)
-		return result
-	} catch {
-		await FlowActors.access.configure(chainID: originalChainID, accessAPI: originalClient)
-		throw error
-	}
+    do {
+        let result = try await body()
+        await FlowActors.access.configure(chainID: originalChainID, accessAPI: originalClient)
+        return result
+    } catch {
+        await FlowActors.access.configure(chainID: originalChainID, accessAPI: originalClient)
+        throw error
+    }
 }

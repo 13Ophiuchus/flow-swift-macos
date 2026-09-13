@@ -1,88 +1,88 @@
-	//
-	//  Staking.swift
-	//  Flow
-	//
-	//  Created by Hao Fu on 4/4/2025.
-	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
-	//
+//
+//  Cadence+Staking.swift
+//  Flow
+//
+//  Created by Hao Fu on 4/4/2025.
+//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+//
 
 import Foundation
 
 public extension CadenceLoader.Category {
-	enum Staking: String, CaseIterable, CadenceLoaderProtocol {
-		case getDelegatorInfo = "get_delegator_info"
+    enum Staking: String, CaseIterable, CadenceLoaderProtocol {
+        case getDelegatorInfo = "get_delegator_info"
 
-		public var filename: String { rawValue }
-	}
+        public var filename: String { rawValue }
+    }
 }
 
 public extension CadenceLoader.Category.Staking {
-	struct StakingNode: Codable, Sendable {
-		public let id: Int
-		public let nodeID: String
-		public let tokensCommitted: Double
-		public let tokensStaked: Double
-		public let tokensUnstaking: Double
-		public let tokensRewarded: Double
-		public let tokensUnstaked: Double
-		public let tokensRequestedToUnstake: Double
+    struct StakingNode: Codable, Sendable {
+        public let id: Int
+        public let nodeID: String
+        public let tokensCommitted: Double
+        public let tokensStaked: Double
+        public let tokensUnstaking: Double
+        public let tokensRewarded: Double
+        public let tokensUnstaked: Double
+        public let tokensRequestedToUnstake: Double
 
-		public var stakingCount: Double {
-			tokensCommitted + tokensStaked
-		}
+        public var stakingCount: Double {
+            tokensCommitted + tokensStaked
+        }
 
-		public var unstakingCount: Double {
-			tokensUnstaking + tokensRequestedToUnstake
-		}
-	}
+        public var unstakingCount: Double {
+            tokensUnstaking + tokensRequestedToUnstake
+        }
+    }
 }
 
 public extension Flow {
-		/// Get staking info for delegator
+    /// Get staking info for delegator
 
-	func getStakingInfo(
-		address: Flow.Address
-	) async throws -> [CadenceLoader.Category.Staking.StakingNode] {
-		let script = try await CadenceLoader.load(
-			CadenceLoader.Category.Staking.getDelegatorInfo
-		)
-		return try await executeScriptAtLatestBlock(
-			script: .init(text: script),
-			arguments: [Flow.Cadence.FValue.address(address).toArgument()]
-		).decode()
-	}
+    func getStakingInfo(
+        address: Flow.Address
+    ) async throws -> [CadenceLoader.Category.Staking.StakingNode] {
+        let script = try await CadenceLoader.load(
+            CadenceLoader.Category.Staking.getDelegatorInfo
+        )
+        return try await executeScriptAtLatestBlock(
+            script: .init(text: script),
+            arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+        ).decode()
+    }
 }
 
-	/// Actor for concurrent staking operations
+/// Actor for concurrent staking operations
 actor StakingCoordinator {
-		// `nonisolated(unsafe)` tells Swift 6 that we take responsibility for
-		// thread-safety of `flow`; it allows the value to cross into `sending`
-		// closures without a Sendable conformance on Flow itself.
-	private let flow: Flow
+    // `nonisolated(unsafe)` tells Swift 6 that we take responsibility for
+    // thread-safety of `flow`; it allows the value to cross into `sending`
+    // closures without a Sendable conformance on Flow itself.
+    private let flow: Flow
 
-	init(flow: Flow) {
-		self.flow = flow
-	}
+    init(flow: Flow) {
+        self.flow = flow
+    }
 
-		/// Concurrent fetch of multiple delegators' staking info
-	func loadStakingBatch(
-		for addresses: [Flow.Address]
-	) async throws -> [Flow.Address: [CadenceLoader.Category.Staking.StakingNode]] {
-		return try await withThrowingTaskGroup(
-			of: (Flow.Address, [CadenceLoader.Category.Staking.StakingNode]).self
-		) { group in
-			for address in addresses {
-				group.addTask { [flow = self.flow] in
-					let staking = try await flow.getStakingInfo(address: address)
-					return (address, staking)
-				}
-			}
+    /// Concurrent fetch of multiple delegators' staking info
+    func loadStakingBatch(
+        for addresses: [Flow.Address]
+    ) async throws -> [Flow.Address: [CadenceLoader.Category.Staking.StakingNode]] {
+        return try await withThrowingTaskGroup(
+            of: (Flow.Address, [CadenceLoader.Category.Staking.StakingNode]).self
+        ) { group in
+            for address in addresses {
+                group.addTask { [flow = self.flow] in
+                    let staking = try await flow.getStakingInfo(address: address)
+                    return (address, staking)
+                }
+            }
 
-			var dict: [Flow.Address: [CadenceLoader.Category.Staking.StakingNode]] = [:]
-			for try await (address, staking) in group {
-				dict[address] = staking
-			}
-			return dict
-		}
-	}
+            var dict: [Flow.Address: [CadenceLoader.Category.Staking.StakingNode]] = [:]
+            for try await (address, staking) in group {
+                dict[address] = staking
+            }
+            return dict
+        }
+    }
 }

@@ -5,7 +5,6 @@
 //  Created by Nicholas Reich on 3/26/26.
 //
 
-
 //
 //  FlowAddressesLoader.swift
 //  Flow
@@ -18,7 +17,6 @@ public struct FlowAddressesFile: Decodable {
 }
 
 public enum FlowAddressesLoader {
-
     /// Load addresses.json from a file URL.
     public static func load(from url: URL) throws -> [Flow.Address] {
         let data = try Data(contentsOf: url)

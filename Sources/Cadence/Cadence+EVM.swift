@@ -1,110 +1,110 @@
-	//
-	//  File.swift
-	//  Flow
-	//
-	//  Created by Hao Fu on 1/4/2025.
-	//
-	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+//
+//  Cadence+EVM.swift
+//  Flow
+//
+//  Created by Hao Fu on 1/4/2025.
+//
+//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 
-import Foundation
 import BigInt
+import Foundation
 
-extension CadenceLoader.Category {
-	public enum EVM: String, CaseIterable, CadenceLoaderProtocol {
-		case getAddress = "get_addr"
-		case createCOA = "create_coa"
-		case evmRun = "evm_run"
+public extension CadenceLoader.Category {
+    enum EVM: String, CaseIterable, CadenceLoaderProtocol {
+        case getAddress = "get_addr"
+        case createCOA = "create_coa"
+        case evmRun = "evm_run"
 
-		public var filename: String { rawValue }
-	}
+        public var filename: String { rawValue }
+    }
 }
 
 public extension Flow {
-	/// Get EVM address for Flow account
-	
-	func getEVMAddress(address: Flow.Address) async throws -> String? {
-		let script = try await CadenceLoader.load(
-		CadenceLoader.Category.EVM.getAddress
-		)
-		return try await executeScriptAtLatestBlock(
-		script: .init(text: script),
-		arguments: [Flow.Cadence.FValue.address(address).toArgument()]
-			).decode()
-	}
+    /// Get EVM address for Flow account
 
-		/// Create Cadence Object Account (COA) with gas fee
-	@FlowActor
-	func createCOA(
-		chainID: ChainID,
-		proposer: Address,
-		payer: Address,
-		amount: Decimal = 0,
-		signers: [FlowSigner]
-	) async throws -> Flow.ID {
-		guard let amountFlow = amount.toFlowValue()?.toArgument() else {
-			throw FError.customError(msg: "Amount convert to flow arg failed")
-		}
+    func getEVMAddress(address: Flow.Address) async throws -> String? {
+        let script = try await CadenceLoader.load(
+            CadenceLoader.Category.EVM.getAddress
+        )
+        return try await executeScriptAtLatestBlock(
+            script: .init(text: script),
+            arguments: [Flow.Cadence.FValue.address(address).toArgument()]
+        ).decode()
+    }
 
-		let script = try await CadenceLoader.load(
-			CadenceLoader.Category.EVM.createCOA
-		)
+    /// Create Cadence Object Account (COA) with gas fee
+    @FlowActor
+    func createCOA(
+        chainID: ChainID,
+        proposer: Address,
+        payer: Address,
+        amount: Decimal = 0,
+        signers: [FlowSigner]
+    ) async throws -> Flow.ID {
+        guard let amountFlow = amount.toFlowValue()?.toArgument() else {
+            throw FError.customError(msg: "Amount convert to flow arg failed")
+        }
 
-		let unsignedTx = try await buildTransaction(
-			chainID: chainID,
-			script: script,
-			agrument: [amountFlow],
-			payerAddress: payer,
-			proposerKey: .init(address: proposer)
-		)
+        let script = try await CadenceLoader.load(
+            CadenceLoader.Category.EVM.createCOA
+        )
 
-		let signedTx = try await signTransaction(
-			unsignedTransaction: unsignedTx,
-			signers: signers
-		)
+        let unsignedTx = try await buildTransaction(
+            chainID: chainID,
+            script: script,
+            agrument: [amountFlow],
+            payerAddress: payer,
+            proposerKey: .init(address: proposer)
+        )
 
-		return try await sendTransaction(
-			chainID: chainID,
-			signedTransaction: signedTx
-		)
-	}
+        let signedTx = try await signTransaction(
+            unsignedTransaction: unsignedTx,
+            signers: signers
+        )
 
-		/// Execute EVM transaction through Flow
-	@FlowActor
-	func runEVMTransaction(
-		chainID: ChainID,
-		proposer: Address,
-		payer: Address,
-		rlpEncodedTransaction: [UInt8],
-		coinbaseAddress: String,
-		signers: [FlowSigner]
-	) async throws -> Flow.ID {
-		guard
-			let txArg = rlpEncodedTransaction.toFlowValue()?.toArgument(),
-			let coinbaseArg = coinbaseAddress.toFlowValue()?.toArgument()
-		else {
-			throw FError.customError(msg: "EVM transaction arguments encoding failed")
-		}
+        return try await sendTransaction(
+            chainID: chainID,
+            signedTransaction: signedTx
+        )
+    }
 
-		let script = try await CadenceLoader.load(
-			CadenceLoader.Category.EVM.evmRun
-		)
+    /// Execute EVM transaction through Flow
+    @FlowActor
+    func runEVMTransaction(
+        chainID: ChainID,
+        proposer: Address,
+        payer: Address,
+        rlpEncodedTransaction: [UInt8],
+        coinbaseAddress: String,
+        signers: [FlowSigner]
+    ) async throws -> Flow.ID {
+        guard
+            let txArg = rlpEncodedTransaction.toFlowValue()?.toArgument(),
+            let coinbaseArg = coinbaseAddress.toFlowValue()?.toArgument()
+        else {
+            throw FError.customError(msg: "EVM transaction arguments encoding failed")
+        }
 
-		let unsignedTx = try await buildTransaction(
-			script: script,
-			agrument: [txArg, coinbaseArg],
-			authorizer: [proposer],
-			payerAddress: payer,
-			proposerKey: .init(address: proposer)
-		)
+        let script = try await CadenceLoader.load(
+            CadenceLoader.Category.EVM.evmRun
+        )
 
-		let signedTx = try await signTransaction(
-			unsignedTransaction: unsignedTx,
-			signers: signers
-		)
+        let unsignedTx = try await buildTransaction(
+            script: script,
+            agrument: [txArg, coinbaseArg],
+            authorizer: [proposer],
+            payerAddress: payer,
+            proposerKey: .init(address: proposer)
+        )
 
-		return try await sendTransaction(
-			chainID: chainID,
-			signedTransaction: signedTx
-		)
-	}
+        let signedTx = try await signTransaction(
+            unsignedTransaction: unsignedTx,
+            signers: signers
+        )
+
+        return try await sendTransaction(
+            chainID: chainID,
+            signedTransaction: signedTx
+        )
+    }
 }

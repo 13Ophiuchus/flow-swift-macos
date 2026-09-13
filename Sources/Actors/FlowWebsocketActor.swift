@@ -1,171 +1,169 @@
-	//
-	//  FlowWebsocketActor.swift
-	//  Flow
-	//
-	//  Created by Nicholas Reich on 3/22/26.
-	//  Modernized to delegate to FlowWebSocketCenter (NIO) while using
-	//  Swift Concurrency (AsyncStream) instead of Combine.
-	//
+//
+//  FlowWebsocketActor.swift
+//  Flow
+//
+//  Created by Nicholas Reich on 3/22/26.
+//  Modernized to delegate to FlowWebSocketCenter (NIO) while using
+//  Swift Concurrency (AsyncStream) instead of Combine.
+//
 
 import Foundation
 
-	// MARK: - Global Websocket Actor
+// MARK: - Global Websocket Actor
 
 @globalActor
 public actor FlowWebsocketActor {
-	public static let shared = FlowWebsocketActor()
+    public static let shared = FlowWebsocketActor()
 
-	public let websocket: Flow.Websocket
+    public let websocket: Flow.Websocket
 
-	public init() {
-		self.websocket = Flow.Websocket()
-	}
+    public init() {
+        websocket = Flow.Websocket()
+    }
 }
 
 // MARK: - Websocket actor façade
 
 public extension Flow {
+    /// Websocket façade that delegates to FlowWebSocketCenter + NIO
+    /// and exposes AsyncStream-based APIs.
+    actor Websocket {
+        // MARK: State
 
-		/// Websocket façade that delegates to FlowWebSocketCenter + NIO
-		/// and exposes AsyncStream-based APIs.
-	actor Websocket {
+        private var isConnected = false
 
-			// MARK: State
+        public init() {}
 
-		private var isConnected = false
+        // MARK: - Connection
 
-		public init() {}
+        // Must actually await the connection handshake — callers (like
+        // live integration tests) immediately subscribe afterward and
+        // need a guarantee the socket is ready, not just that this
+        // method was entered.
+        public func connect(to _: URL) async throws {
+            try await FlowWebSocketCenter.shared.connectIfNeeded()
+            await setConnected(true)
+        }
 
-			// MARK: - Connection
+        public func disconnect() {
+            _Concurrency.Task { [weak self] in
+                guard let self else { return }
+                await FlowWebSocketCenter.shared.disconnect()
+                await self.setConnected(false)
+            }
+        }
 
-			// Must actually await the connection handshake — callers (like
-			// live integration tests) immediately subscribe afterward and
-			// need a guarantee the socket is ready, not just that this
-			// method was entered.
-		public func connect(to url: URL) async throws {
-			try await FlowWebSocketCenter.shared.connectIfNeeded()
-			await self.setConnected(true)
-		}
+        // MARK: - Transaction status subscription
 
-		public func disconnect() {
-			_Concurrency.Task { [weak self] in
-				guard let self else { return }
-				await FlowWebSocketCenter.shared.disconnect()
-				await self.setConnected(false)
-			}
-		}
+        /// Returns an AsyncThrowingStream of raw topic responses for a given
+        /// transaction ID. The stream is backed by FlowWebSocketCenter's shared
+        /// envelope bus, filtered to this tx ID only.
+        public func subscribeToTransactionStatus(
+            txId: Flow.ID
+        ) async throws -> AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error> {
+            // subscribeToTransactionStatus now sends the subscribe frame AND
+            // returns a properly typed AsyncThrowingStream — no intermediate
+            // `()` assignment needed.
+            let stream = try await FlowWebSocketCenter.shared.subscribeToTransactionStatus(id: txId)
 
-			// MARK: - Transaction status subscription
+            // Wrap so we can also publish high-level events as each response arrives.
+            return AsyncThrowingStream { continuation in
+                _Concurrency.Task {
+                    do {
+                        for try await response in stream {
+                            guard let payload = response.payload else { continue }
 
-			/// Returns an AsyncThrowingStream of raw topic responses for a given
-			/// transaction ID. The stream is backed by FlowWebSocketCenter's shared
-			/// envelope bus, filtered to this tx ID only.
-		public func subscribeToTransactionStatus(
-			txId: Flow.ID
-		) async throws -> AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error> {
-				// subscribeToTransactionStatus now sends the subscribe frame AND
-				// returns a properly typed AsyncThrowingStream — no intermediate
-				// `()` assignment needed.
-			let stream = try await FlowWebSocketCenter.shared.subscribeToTransactionStatus(id: txId)
+                            let txResult = try payload.asTransactionResult()
 
-				// Wrap so we can also publish high-level events as each response arrives.
-			return AsyncThrowingStream { continuation in
-				_Concurrency.Task {
-					do {
-						for try await response in stream {
-							guard let payload = response.payload else { continue }
+                            await Flow.shared.publisher.publishTransactionStatus(
+                                id: txId,
+                                status: txResult
+                            )
 
-							let txResult = try payload.asTransactionResult()
+                            // Pass response directly — no rewrap needed, types already match.
+                            continuation.yield(response)
+                        }
+                        continuation.finish()
+                    } catch {
+                        await self.sendError(error)
+                        continuation.finish(throwing: error)
+                    }
+                }
+            }
+        }
 
-							await Flow.shared.publisher.publishTransactionStatus(
-								id: txId,
-								status: txResult
-							)
+        /// Convenience helper to build streams for multiple transaction IDs.
+        @FlowWebsocketActor
+        public static func subscribeToManyTransactionStatuses(
+            txIds: [Flow.ID]
+        ) async throws -> [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] {
+            var result: [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] = [:]
 
-								// Pass response directly — no rewrap needed, types already match.
-							continuation.yield(response)
-						}
-						continuation.finish()
-					} catch {
-						await self.sendError(error)
-						continuation.finish(throwing: error)
-					}
-				}
-			}
-		}
+            for id in txIds {
+                let stream = try await FlowWebsocketActor.shared.websocket
+                    .subscribeToTransactionStatus(txId: id)
+                result[id] = stream
+            }
 
-			/// Convenience helper to build streams for multiple transaction IDs.
-		@FlowWebsocketActor
-		public static func subscribeToManyTransactionStatuses(
-			txIds: [Flow.ID]
-		) async throws -> [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] {
-			var result: [Flow.ID: AsyncThrowingStream<TopicResponse<Flow.TransactionStatusBody>, Error>] = [:]
+            return result
+        }
 
-			for id in txIds {
-				let stream = try await FlowWebsocketActor.shared.websocket
-					.subscribeToTransactionStatus(txId: id)
-				result[id] = stream
-			}
+        // MARK: - Helpers
 
-			return result
-		}
+        private func setConnected(_ status: Bool) async {
+            isConnected = status
+            await Flow.publishConnectionStatus(isConnected: status)
+        }
 
-			// MARK: - Helpers
-
-		private func setConnected(_ status: Bool) async {
-			isConnected = status
-			await Flow.publishConnectionStatus(isConnected: status)
-		}
-
-		private func sendError(_ error: Error) async {
-			await Flow.publishError(error)
-		}
-	}
+        private func sendError(_ error: Error) async {
+            await Flow.publishError(error)
+        }
+    }
 }
 
 public extension Flow {
-	@FlowActor
-	static func publishConnectionStatus(isConnected: Bool) async {
-		await Flow.shared.publisher.publishConnectionStatus(isConnected: isConnected)
-	}
+    @FlowActor
+    static func publishConnectionStatus(isConnected: Bool) async {
+        await Flow.shared.publisher.publishConnectionStatus(isConnected: isConnected)
+    }
 
-	@FlowActor
-	static func publishError(_ error: Error) async {
-		await Flow.shared.publisher.publishError(error)
-	}
+    @FlowActor
+    static func publishError(_ error: Error) async {
+        await Flow.shared.publisher.publishError(error)
+    }
 }
 
 // MARK: - Models
 
 public extension Flow {
-	struct Topic: RawRepresentable, Sendable {
-		public let rawValue: String
+    struct Topic: RawRepresentable, Sendable {
+        public let rawValue: String
 
-		public init(rawValue: String) {
-			self.rawValue = rawValue
-		}
+        public init(rawValue: String) {
+            self.rawValue = rawValue
+        }
 
-		public static func transactionStatus(txId: Flow.ID) -> Topic {
-			Topic(rawValue: "transactionStatus:\(txId.hex)")
-		}
-	}
+        public static func transactionStatus(txId: Flow.ID) -> Topic {
+            Topic(rawValue: "transactionStatus:\(txId.hex)")
+        }
+    }
 
-	struct TopicResponse<T: Decodable & Sendable>: Decodable, Sendable {
-		public let subscriptionId: String
-		public let payload: T?
-	}
+    struct TopicResponse<T: Decodable & Sendable>: Decodable, Sendable {
+        public let subscriptionId: String
+        public let payload: T?
+    }
 
-	struct SubscribeResponse: Decodable {
-		public struct ErrorBody: Decodable, Sendable {
-			public let message: String
-			public let code: Int?
-		}
+    struct SubscribeResponse: Decodable {
+        public struct ErrorBody: Decodable, Sendable {
+            public let message: String
+            public let code: Int?
+        }
 
-		public let id: String
-		public let error: ErrorBody?
-	}
+        public let id: String
+        public let error: ErrorBody?
+    }
 
-	enum WebSocketError: Error {
-		case serverError(SubscribeResponse.ErrorBody)
-	}
+    enum WebSocketError: Error {
+        case serverError(SubscribeResponse.ErrorBody)
+    }
 }

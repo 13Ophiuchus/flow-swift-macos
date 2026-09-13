@@ -1,146 +1,146 @@
-	//
-	//  FlowChainID.swift
-	//
-	//  Copyright 2022 Outblock Pty Ltd
-	//
-	//  Licensed under the Apache License, Version 2.0 (the "License");
-	//  you may not use this file except in compliance with the License.
-	//  You may obtain a copy of the License at
-	//
-	//    http://www.apache.org/licenses/LICENSE-2.0
-	//
-	//  Unless required by applicable law or agreed to in writing, software
-	//  distributed under the License is distributed on an "AS IS" BASIS,
-	//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	//  See the License for the specific language governing permissions and
-	//  limitations under the License.
-	//
-	//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
+//
+//  FlowChainId.swift
+//
+//  Copyright 2022 Outblock Pty Ltd
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+//  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 
 import Foundation
 
 public extension Flow {
-		/// Identification of the Flow environment.
-	enum ChainID: CaseIterable, Hashable, Codable, Sendable {
-			/// Unknown environment as a fallback.
-		case unknown
+    /// Identification of the Flow environment.
+    enum ChainID: CaseIterable, Hashable, Codable, Sendable {
+        /// Unknown environment as a fallback.
+        case unknown
 
-			/// Mainnet environment.
-			/// Default gRPC node: `access.mainnet.nodes.onflow.org:9000`
-			/// HTTP node: `https://rest-mainnet.onflow.org/`
-		case mainnet
+        /// Mainnet environment.
+        /// Default gRPC node: `access.mainnet.nodes.onflow.org:9000`
+        /// HTTP node: `https://rest-mainnet.onflow.org/`
+        case mainnet
 
-			/// Testnet environment.
-			/// Default gRPC node: `access.devnet.nodes.onflow.org:9000`
-			/// HTTP node: `https://rest-testnet.onflow.org/`
-		case testnet
+        /// Testnet environment.
+        /// Default gRPC node: `access.devnet.nodes.onflow.org:9000`
+        /// HTTP node: `https://rest-testnet.onflow.org/`
+        case testnet
 
-			/// Emulator environment.
-			/// Default node: `127.0.0.1:9000`
-		case emulator
+        /// Emulator environment.
+        /// Default node: `127.0.0.1:9000`
+        case emulator
 
-			/// Custom ChainID with custom `Transport`.
-		case custom(name: String, transport: Flow.Transport)
+        /// Custom ChainID with custom `Transport`.
+        case custom(name: String, transport: Flow.Transport)
 
-			/// List of non-custom chain ids.
-		public static let allCases: [Flow.ChainID] = [.mainnet, .testnet, .emulator]
+        /// List of non-custom chain ids.
+        public static let allCases: [Flow.ChainID] = [.mainnet, .testnet, .emulator]
 
-			/// Name of the chain id.
-		public var name: String {
-			switch self {
-				case .mainnet:
-					return "mainnet"
-				case .testnet:
-					return "testnet"
-				case .emulator:
-					return "emulator"
-				case .unknown:
-					return "unknown"
-				case let .custom(name, _):
-					return name
-			}
-		}
+        /// Name of the chain id.
+        public var name: String {
+            switch self {
+            case .mainnet:
+                return "mainnet"
+            case .testnet:
+                return "testnet"
+            case .emulator:
+                return "emulator"
+            case .unknown:
+                return "unknown"
+            case let .custom(name, _):
+                return name
+            }
+        }
 
-			/// Value from the access API
-			/// https://rest-mainnet.onflow.org/v1/network/parameters
-			/// https://rest-testnet.onflow.org/v1/network/parameters
-		public var value: String {
-			"flow-\(name)"
-		}
+        /// Value from the access API
+        /// https://rest-mainnet.onflow.org/v1/network/parameters
+        /// https://rest-testnet.onflow.org/v1/network/parameters
+        public var value: String {
+            "flow-\(name)"
+        }
 
-			/// Default HTTP endpoint for this chain.
-		public var defaultHTTPNode: Flow.Transport {
-			switch self {
-				case .mainnet:
-					return .HTTP(URL(string: "https://rest-mainnet.onflow.org/")!)
-				case .testnet:
-					return .HTTP(URL(string: "https://rest-testnet.onflow.org/")!)
-				case .emulator:
-					return .HTTP(URL(string: "http://127.0.0.1:8888/")!)
-				case let .custom(_, transport):
-					return transport
-				case .unknown:
-						// Fallback to testnet for unknown.
-					return .HTTP(URL(string: "https://rest-testnet.onflow.org/")!)
-			}
-		}
+        /// Default HTTP endpoint for this chain.
+        public var defaultHTTPNode: Flow.Transport {
+            switch self {
+            case .mainnet:
+                return .HTTP(URL(string: "https://rest-mainnet.onflow.org/")!)
+            case .testnet:
+                return .HTTP(URL(string: "https://rest-testnet.onflow.org/")!)
+            case .emulator:
+                return .HTTP(URL(string: "http://127.0.0.1:8888/")!)
+            case let .custom(_, transport):
+                return transport
+            case .unknown:
+                // Fallback to testnet for unknown.
+                return .HTTP(URL(string: "https://rest-testnet.onflow.org/")!)
+            }
+        }
 
-			/// Default node for `.mainnet, .testnet, .emulator`.
-		public var defaultNode: Flow.Transport {
-			switch self {
-				case .mainnet:
-					return .gRPC(.init(node: "access.mainnet.nodes.onflow.org", port: 9000))
-				case .testnet:
-					return .gRPC(.init(node: "access.devnet.nodes.onflow.org", port: 9000))
-				case .emulator:
-					return .gRPC(.init(node: "127.0.0.1", port: 9000))
-				case let .custom(_, endpoint):
-					return endpoint
-				case .unknown:
-						// Fallback to testnet node.
-					return .gRPC(.init(node: "access.devnet.nodes.onflow.org", port: 9000))
-			}
-		}
+        /// Default node for `.mainnet, .testnet, .emulator`.
+        public var defaultNode: Flow.Transport {
+            switch self {
+            case .mainnet:
+                return .gRPC(.init(node: "access.mainnet.nodes.onflow.org", port: 9000))
+            case .testnet:
+                return .gRPC(.init(node: "access.devnet.nodes.onflow.org", port: 9000))
+            case .emulator:
+                return .gRPC(.init(node: "127.0.0.1", port: 9000))
+            case let .custom(_, endpoint):
+                return endpoint
+            case .unknown:
+                // Fallback to testnet node.
+                return .gRPC(.init(node: "access.devnet.nodes.onflow.org", port: 9000))
+            }
+        }
 
-		public var defaultWebSocketNode: Flow.Transport? {
-			switch self {
-				case .mainnet:
-					return .websocket(URL(string: "wss://rest-mainnet.onflow.org/v1/ws")!)
-				case .testnet:
-					return .websocket(URL(string: "wss://rest-testnet.onflow.org/v1/ws")!)
-				case .emulator, .custom, .unknown:
-					return nil
-			}
-		}
+        public var defaultWebSocketNode: Flow.Transport? {
+            switch self {
+            case .mainnet:
+                return .websocket(URL(string: "wss://rest-mainnet.onflow.org/v1/ws")!)
+            case .testnet:
+                return .websocket(URL(string: "wss://rest-testnet.onflow.org/v1/ws")!)
+            case .emulator, .custom, .unknown:
+                return nil
+            }
+        }
 
-		public init(name: String) {
-			self = ChainID.allCases.first { $0.name == name || $0.value == name } ?? .unknown
-		}
+        public init(name: String) {
+            self = ChainID.allCases.first { $0.name == name || $0.value == name } ?? .unknown
+        }
 
-		public static func == (lhs: Flow.ChainID, rhs: Flow.ChainID) -> Bool {
-			lhs.name == rhs.name && lhs.defaultNode == rhs.defaultNode
-		}
+        public static func == (lhs: Flow.ChainID, rhs: Flow.ChainID) -> Bool {
+            lhs.name == rhs.name && lhs.defaultNode == rhs.defaultNode
+        }
 
-			// TODO: Support custom node encode & decode
-		public func encode(to encoder: Encoder) throws {
-			var container = encoder.singleValueContainer()
-			try container.encode(name)
-		}
+        // TODO: Support custom node encode & decode
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(name)
+        }
 
-		public init(from decoder: Decoder) throws {
-			let container = try decoder.singleValueContainer()
-			let string = try container.decode(String.self)
-			self.init(name: string)
-		}
-	}
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+            self.init(name: string)
+        }
+    }
 }
 
 extension Flow.ChainID: RawRepresentable {
-	public var rawValue: String {
-		name
-	}
+    public var rawValue: String {
+        name
+    }
 
-	public init?(rawValue: String) {
-		self.init(name: rawValue)
-	}
+    public init?(rawValue: String) {
+        self.init(name: rawValue)
+    }
 }
