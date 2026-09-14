@@ -127,6 +127,7 @@ public extension Flow {
     func buildTransaction(
         chainID: Flow.ChainID,
         skipEmptyCheck: Bool = false,
+        access: FlowAccessActor = FlowActors.access,
         @Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
     ) async throws -> Flow.Transaction {
         await FlowLogger.shared.logAsync(
@@ -226,7 +227,9 @@ public extension Flow {
 
         // Use the actor-configured client so injected mocks (tests) and the
         // real HTTP client (production) are both respected consistently.
-        let httpAPI = await FlowActors.access.currentClient
+        // `access` defaults to the shared singleton (unchanged production
+        // behavior); tests may pass a suite-local instance for isolation.
+        let httpAPI = await access.currentClient
 
         await FlowLogger.shared.logAsync(.debug, message: "Resolving reference block ID")
         let id = try await resolveBlockId(api: httpAPI, refBlock: refBlock)
@@ -283,12 +286,14 @@ public extension Flow {
     /// Convenience overload: uses current chainID from config actor.
     func buildTransaction(
         skipEmptyCheck: Bool = false,
+        access: FlowAccessActor = FlowActors.access,
         @Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
     ) async throws -> Flow.Transaction {
         let currentChainID = await FlowActors.config.chainID
         return try await buildTransaction(
             chainID: currentChainID,
             skipEmptyCheck: skipEmptyCheck,
+            access: access,
             builder: builder
         )
     }
@@ -342,26 +347,33 @@ public extension Flow {
 
     func sendTransaction(
         chainID _: Flow.ChainID,
-        signedTransaction: Flow.Transaction
+        signedTransaction: Flow.Transaction,
+        access: FlowAccessActor = FlowActors.access
     ) async throws -> Flow.ID {
-        let api = await FlowActors.access.currentClient
+        let api = await access.currentClient
         return try await api.sendTransaction(transaction: signedTransaction)
     }
 
     func sendTransaction(
-        signedTransaction: Flow.Transaction
+        signedTransaction: Flow.Transaction,
+        access: FlowAccessActor = FlowActors.access
     ) async throws -> Flow.ID {
         let currentChainID = await FlowActors.config.chainID
-        return try await sendTransaction(chainID: currentChainID, signedTransaction: signedTransaction)
+        return try await sendTransaction(
+            chainID: currentChainID,
+            signedTransaction: signedTransaction,
+            access: access
+        )
     }
 
     func sendTransaction(
         chainID: Flow.ChainID,
         signers: [FlowSigner],
+        access: FlowAccessActor = FlowActors.access,
         @Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
     ) async throws -> Flow.ID {
-        let api = await FlowActors.access.currentClient
-        let unsignedTx = try await buildTransaction(chainID: chainID, builder: builder)
+        let api = await access.currentClient
+        let unsignedTx = try await buildTransaction(chainID: chainID, access: access, builder: builder)
 
         // This is fine: both methods are FlowActor‑isolated.
         let signedTx = try await signTransaction(
@@ -374,10 +386,16 @@ public extension Flow {
 
     func sendTransaction(
         signers: [FlowSigner],
+        access: FlowAccessActor = FlowActors.access,
         @Flow.TransactionBuild.TransactionBuilder builder: () -> [Flow.TransactionBuild]
     ) async throws -> Flow.ID {
         let currentChainID = await FlowActors.config.chainID
-        return try await sendTransaction(chainID: currentChainID, signers: signers, builder: builder)
+        return try await sendTransaction(
+            chainID: currentChainID,
+            signers: signers,
+            access: access,
+            builder: builder
+        )
     }
 }
 
