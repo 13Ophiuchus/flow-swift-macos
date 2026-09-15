@@ -11,20 +11,22 @@ import Testing
 
 @Suite(.serialized)
 struct CadenceTargetMainnetTests {
-    private let flow = Flow()
+    // TestFlowActor configures the global FlowActors.access singleton for mainnet.
+    // Flow.shared.query() routes through FlowActors.access.currentClient internally.
+    private let flow = TestFlowActor.mainnet()
 
     init() async {
-        await FlowAccessActor.shared.configure(chainID: Flow.ChainID.mainnet)
-        await flow.configure(chainID: Flow.ChainID.mainnet)
+        await flow.access.configure(chainID: .mainnet)
+        await FlowActors.config.updateChainID(.mainnet)
     }
 
     @Test(.timeLimit(.minutes(1)))
     func query() async throws {
-        let result: String? = try await flow.query(
+        let result: String? = try await Flow.shared.query(
             TestCadenceTarget.getCOAAddr(
                 address: Flow.Address(hex: "0x84221fe0294044d7")
             ),
-            chainID: Flow.ChainID.mainnet
+            chainID: .mainnet
         )
 
         #expect(result != nil)

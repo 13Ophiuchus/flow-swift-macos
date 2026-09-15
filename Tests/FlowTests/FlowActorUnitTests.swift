@@ -2,14 +2,11 @@
 //  FlowActorUnitTests.swift
 //  FlowTests
 //
-//  Unit tests: zero network calls. MockFlowAccessAPI is injected via
-//  FlowAccessActor.configure() before each test suite runs.
-//
-//  Architecture rule:
-//  - @Suite structs that call @FlowActor-isolated code must themselves
-//    be annotated @FlowActor so Swift Testing runs them on that actor.
-//  - Tests that only exercise pure value types (TransactionBuild DSL,
-//    Argument encoding) need no actor annotation.
+//  Unit tests: zero network calls. Each suite that needs a FlowAccessActor
+//  creates its own isolated instance via FlowAccessActor(initialChainID:)
+//  and passes it explicitly to buildTransaction/sendTransaction via the
+//  `access:` parameter. The global FlowActors.access singleton is never
+//  mutated, so suites run safely in parallel with no race conditions.
 //
 
 @testable import BigInt
@@ -51,16 +48,22 @@ struct FlowConfigActorTests {
 @Suite("FlowAccessActor — mock-injected API calls", .serialized)
 @FlowActor
 struct FlowAccessActorTests {
-    private let mock = MockFlowAccessAPI()
+    // Suite-local actor — never touches FlowActors.access
+    private let access: FlowAccessActor
+    private let mock: MockFlowAccessAPI
 
     init() async {
-        await FlowActors.access.configure(chainID: .testnet, accessAPI: mock)
+        let m = MockFlowAccessAPI()
+        let a = FlowAccessActor(initialChainID: .testnet)
+        await a.configure(chainID: .testnet, accessAPI: m)
+        mock = m
+        access = a
     }
 
     @Test("ping returns mock value")
     func ping() async throws {
         mock.stub_ping = true
-        let result = try await FlowActors.access.ping()
+        let result = try await access.ping()
         #expect(result == true)
         #expect(mock.callCount_ping == 1)
     }
@@ -69,7 +72,7 @@ struct FlowAccessActorTests {
     func pingThrows() async {
         mock.stub_error = MockError.intentional("ping failure")
         await #expect(throws: MockError.self) {
-            try await FlowActors.access.ping()
+            try await access.ping()
         }
     }
 
@@ -78,7 +81,7 @@ struct FlowAccessActorTests {
         mock.stub_scriptResponse = Flow.ScriptResponse(
             data: #"{"type":"String","value":"hello"}"#.data(using: .utf8)!
         )
-        let response = try await FlowActors.access.executeScriptAtLatestBlock(
+        let response = try await access.executeScriptAtLatestBlock(
             script: Flow.Script(text: "access(all) fun main(): String { return \"hello\" }"),
             arguments: [],
             blockStatus: Flow.BlockStatus.final
@@ -94,7 +97,7 @@ struct FlowAccessActorTests {
             address: testAddress.hex,
             sequenceNumber: 7
         )
-        let account = try await FlowActors.access.getAccountAtLatestBlock(
+        let account = try await access.getAccountAtLatestBlock(
             address: testAddress,
             blockStatus: Flow.BlockStatus.final
         )
@@ -106,7 +109,7 @@ struct FlowAccessActorTests {
     func sendTransaction() async throws {
         mock.stub_sendTransactionID = testBlockID
         let dummyTx = try makeDummyTransaction()
-        let id = try await FlowActors.access.sendTransaction(transaction: dummyTx)
+        let id = try await access.sendTransaction(transaction: dummyTx)
         #expect(id == testBlockID)
         #expect(mock.callCount_sendTransaction == 1)
     }
@@ -115,7 +118,7 @@ struct FlowAccessActorTests {
     func errorPropagates() async {
         mock.stub_error = Flow.FError.customError(msg: "test error")
         await #expect(throws: Flow.FError.self) {
-            try await FlowActors.access.executeScriptAtLatestBlock(
+            try await access.executeScriptAtLatestBlock(
                 script: Flow.Script(text: ""),
                 arguments: [],
                 blockStatus: Flow.BlockStatus.final
@@ -195,25 +198,34 @@ struct TransactionBuildDSLTests {
     }
 }
 
-// MARK: - buildTransaction (FlowActor-isolated, mock injected)
+// MARK: - buildTransaction (FlowActor-isolated, suite-local actor)
 
 @Suite("Flow.buildTransaction — mock-injected, no network", .serialized)
 @FlowActor
 struct BuildTransactionTests {
-    private let mock = MockFlowAccessAPI()
+    // Suite-local actor — never touches FlowActors.access
+    private let access: FlowAccessActor
+    private let mock: MockFlowAccessAPI
 
     init() async {
-        mock.stub_latestBlock = MockFlowAccessAPI.makeBlock()
-        mock.stub_account = MockFlowAccessAPI.makeAccount(
+        let m = MockFlowAccessAPI()
+        m.stub_latestBlock = MockFlowAccessAPI.makeBlock()
+        m.stub_account = MockFlowAccessAPI.makeAccount(
             address: testAddress.hex,
             sequenceNumber: 1
         )
-        await FlowActors.access.configure(chainID: .testnet, accessAPI: mock)
+        let a = FlowAccessActor(initialChainID: .testnet)
+        await a.configure(chainID: .testnet, accessAPI: m)
+        mock = m
+        access = a
     }
 
     @Test("buildTransaction resolves reference block from mock")
     func buildsTransactionWithMockBlock() async throws {
-        let tx = try await Flow.shared.buildTransaction(chainID: .testnet) {
+        let tx = try await Flow.shared.buildTransaction(
+            chainID: .testnet,
+            access: access
+        ) {
             cadence { "access(all) fun main() {}" }
             proposer { testAddress.hex }
             payer { testAddress.hex }
@@ -228,7 +240,10 @@ struct BuildTransactionTests {
     @Test("buildTransaction propagates emptyProposer error")
     func missingProposerThrows() async {
         await #expect(throws: Flow.FError.self) {
-            try await Flow.shared.buildTransaction(chainID: .testnet) {
+            try await Flow.shared.buildTransaction(
+                chainID: .testnet,
+                access: access
+            ) {
                 cadence { "access(all) fun main() {}" }
                 payer { testAddress.hex }
             }
@@ -238,7 +253,10 @@ struct BuildTransactionTests {
     @Test("buildTransaction propagates invalidScript error")
     func emptyScriptThrows() async {
         await #expect(throws: Flow.FError.self) {
-            try await Flow.shared.buildTransaction(chainID: .testnet) {
+            try await Flow.shared.buildTransaction(
+                chainID: .testnet,
+                access: access
+            ) {
                 cadence { "" }
                 proposer { testAddress.hex }
                 payer { testAddress.hex }
@@ -250,7 +268,8 @@ struct BuildTransactionTests {
     func skipEmptyCheckAllowsEmptyScript() async throws {
         let tx = try await Flow.shared.buildTransaction(
             chainID: .testnet,
-            skipEmptyCheck: true
+            skipEmptyCheck: true,
+            access: access
         ) {
             cadence { "" }
             proposer { testAddress.hex }
@@ -265,7 +284,8 @@ struct BuildTransactionTests {
         let dummyTx = try makeDummyTransaction()
         let id = try await Flow.shared.sendTransaction(
             chainID: .testnet,
-            signedTransaction: dummyTx
+            signedTransaction: dummyTx,
+            access: access
         )
         #expect(id == testBlockID)
     }
@@ -276,7 +296,10 @@ struct BuildTransactionTests {
             address: testAddress.hex,
             sequenceNumber: 99
         )
-        let tx = try await Flow.shared.buildTransaction(chainID: .testnet) {
+        let tx = try await Flow.shared.buildTransaction(
+            chainID: .testnet,
+            access: access
+        ) {
             cadence { "access(all) fun main() {}" }
             proposer { testAddress.hex }
             payer { testAddress.hex }

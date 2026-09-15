@@ -24,6 +24,7 @@ private let integrationEnabled =
 )
 @FlowActor
 struct WebSocketLiveTransactionTests {
+    private let flow = TestFlowActor.testnet()
     private var proposerAddress: Flow.Address {
         let hex = ProcessInfo.processInfo.environment["FLOW_TEST_ADDRESS"] ?? ""
         return Flow.Address(hex: hex)
@@ -35,7 +36,7 @@ struct WebSocketLiveTransactionTests {
 
     init() async {
         await FlowActors.config.updateChainID(.testnet)
-        await FlowActors.access.configure(chainID: .testnet)
+        await flow.access.configure(chainID: .testnet)
     }
 
     @Test("Submitting a live tx and subscribing to it yields a real status", .timeLimit(.minutes(2)))
@@ -69,7 +70,7 @@ struct WebSocketLiveTransactionTests {
             )
 
             // 5. Submit to the network.
-            let txId = try await FlowAccessActor.shared.sendTransaction(transaction: tx)
+            let txId = try await flow.access.sendTransaction(transaction: tx)
             print("[LiveTest] Submitted tx: \(txId.hex)")
 
             // 6. Subscribe immediately after submission — socket is already
@@ -102,10 +103,10 @@ struct WebSocketLiveTransactionTests {
             // on the sibling mainnet test (static historical tx has no future
             // transition either).
             if !sawExecuted {
-                var restResult = try await FlowAccessActor.shared.getTransactionResultById(id: txId)
+                var restResult = try await flow.access.getTransactionResultById(id: txId)
                 for _ in 0 ..< 5 where restResult.status < .executed {
                     try await _Concurrency.Task.sleep(nanoseconds: 1_000_000_000)
-                    restResult = try await FlowAccessActor.shared.getTransactionResultById(id: txId)
+                    restResult = try await flow.access.getTransactionResultById(id: txId)
                 }
                 print("[LiveTest] REST fallback status: \(restResult.status)")
                 if restResult.status >= .executed {

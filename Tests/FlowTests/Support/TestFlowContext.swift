@@ -2,9 +2,17 @@
 //  TestFlowContext.swift
 //  FlowTests
 //
-//  Scoped helper to configure FlowAccessActor.shared for a single test,
-//  then restore prior global state afterward. Prevents cross-test pollution
-//  of the shared actor singleton (chainID + accessAPI client).
+//  Integration-test helper ONLY.
+//
+//  USE IN: FlowAccessAPIOnTestnetTests, FlowAccessAPIOnMainnetTests,
+//          FlowActorIntegrationTests, WebSocketLiveTransactionTests —
+//          i.e. tests that must reconfigure the *real* shared singleton
+//          against a live network endpoint.
+//
+//  DO NOT USE IN UNIT TESTS. Unit test suites must create their own
+//  FlowAccessActor(initialChainID:) and pass it via the `access:` parameter
+//  of buildTransaction/sendTransaction. Mutating FlowActors.access from a
+//  unit suite causes races when suites run concurrently.
 //
 
 @testable import Flow

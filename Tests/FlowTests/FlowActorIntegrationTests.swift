@@ -31,21 +31,23 @@ private let testnet = Flow.ChainID.testnet
 )
 @FlowActor
 struct FlowAccessActorIntegrationTests {
+    private var flow: TestFlowActor!
+
     init() async throws {
-        await FlowActors.access.configure(chainID: testnet)
+        flow = await TestFlowActor.testnetAsync()
         await FlowActors.config.updateChainID(testnet)
     }
 
     @Test("ping returns true on testnet")
     func ping() async throws {
-        let result = try await FlowActors.access.ping()
+        let result = try await flow.access.ping()
         #expect(result == true)
     }
 
     @Test("getLatestBlock returns a block with valid ID")
     func getLatestBlock() async throws {
         // Disambiguate overload: choose blockStatus-based version.
-        let block = try await FlowActors.access.getLatestBlock(
+        let block = try await flow.access.getLatestBlock(
             blockStatus: Flow.BlockStatus.final
         )
         #expect(block.id.hex.isEmpty == false)
@@ -54,7 +56,7 @@ struct FlowAccessActorIntegrationTests {
 
     @Test("getLatestBlockHeader returns valid header")
     func getLatestBlockHeader() async throws {
-        let header = try await FlowActors.access.getLatestBlockHeader(
+        let header = try await flow.access.getLatestBlockHeader(
             blockStatus: Flow.BlockStatus.final
         )
         #expect(header.height > 0)
@@ -62,7 +64,7 @@ struct FlowAccessActorIntegrationTests {
 
     @Test("getNetworkParameters returns testnet chainID")
     func getNetworkParameters() async throws {
-        let chainID = try await FlowActors.access.getNetworkParameters()
+        let chainID = try await flow.access.getNetworkParameters()
         #expect(chainID == testnet)
     }
 
@@ -73,7 +75,7 @@ struct FlowAccessActorIntegrationTests {
         	return "integration-ok"
         }
         """)
-        let response = try await FlowActors.access.executeScriptAtLatestBlock(
+        let response = try await flow.access.executeScriptAtLatestBlock(
             script: script,
             arguments: [],
             blockStatus: Flow.BlockStatus.final
@@ -86,7 +88,7 @@ struct FlowAccessActorIntegrationTests {
     func getAccount() async throws {
         // Flow testnet fungible token contract — always exists.
         let knownAddress = "9a0766d93b6608b7"
-        let account = try await FlowActors.access.getAccountAtLatestBlock(
+        let account = try await flow.access.getAccountAtLatestBlock(
             address: knownAddress,
             blockStatus: Flow.BlockStatus.final
         )
@@ -103,6 +105,8 @@ struct FlowAccessActorIntegrationTests {
 )
 @FlowActor
 struct BuildTransactionIntegrationTests {
+    private var flow: TestFlowActor!
+
     // A testnet account you own with a funded key.
     // Override via environment variable so secrets stay out of source.
     private var proposerAddress: Flow.Address {
@@ -112,8 +116,8 @@ struct BuildTransactionIntegrationTests {
     }
 
     init() async {
+        flow = await TestFlowActor.testnetAsync()
         await FlowActors.config.updateChainID(testnet)
-        await FlowActors.access.configure(chainID: testnet)
     }
 
     @Test("buildTransaction resolves live reference block and sequence number")
@@ -139,7 +143,7 @@ struct BuildTransactionIntegrationTests {
         }
         """)
         let arg = Flow.Cadence.FValue.address(proposerAddress).toArgument()
-        let response = try await FlowActors.access.executeScriptAtLatestBlock(
+        let response = try await flow.access.executeScriptAtLatestBlock(
             script: script,
             arguments: [arg],
             blockStatus: Flow.BlockStatus.final

@@ -35,13 +35,14 @@ struct TestEventType: Codable, Sendable {
 @Suite(.serialized)
 @FlowActor
 struct ArgumentDecodeTests {
+    private let flow = TestFlowActor.testnet()
     // MARK: - On-chain helpers
 
     private func executeOnChain<T>(
         script: String
     ) async throws -> T where T: Decodable & Sendable {
         let cadenceScript = Flow.Script(text: script)
-        let snapshot = try await FlowActors.access.executeScriptAtLatestBlock(
+        let snapshot = try await flow.access.executeScriptAtLatestBlock(
             script: cadenceScript,
             arguments: []
         )
@@ -54,7 +55,7 @@ struct ArgumentDecodeTests {
         model: T.Type
     ) async throws -> T? where T: Decodable & Sendable {
         let cadenceScript = Flow.Script(text: script)
-        let snapshot = try await FlowActors.access.executeScriptAtLatestBlock(
+        let snapshot = try await flow.access.executeScriptAtLatestBlock(
             script: cadenceScript,
             arguments: []
         )

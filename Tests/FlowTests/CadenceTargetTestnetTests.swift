@@ -11,8 +11,9 @@ import Testing
 @Suite(.serialized)
 @FlowActor
 struct CadenceTargetTestnetTests {
+    private let flow = TestFlowActor.testnet()
     init() async {
-        await FlowAccessActor.shared.configure(chainID: .testnet)
+        await flow.access.configure(chainID: .testnet)
     }
 
     @Test(.timeLimit(.minutes(1)))
