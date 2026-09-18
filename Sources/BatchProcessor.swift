@@ -30,27 +30,35 @@ public actor BatchProcessor {
 
     // MARK: - Accounts
 
+    /// - Parameter access: The `FlowAccessActor` to use for account lookups.
+    ///   Defaults to the shared production singleton `FlowActors.access`.
+    ///   Pass a suite-local actor in tests to avoid mutating global state.
     public func processAccounts(
         _ addresses: [Flow.Address],
-        maxConcurrent: Int = 8
+        maxConcurrent: Int = 8,
+        access: FlowAccessActor = FlowActors.access
     ) async throws -> [Flow.Address: FlowData] {
         try await process(
             addresses,
             maxConcurrent: maxConcurrent
         ) { address in
-            try await BatchProcessor.fetchAccountDataStatic(for: address)
+            try await BatchProcessor.fetchAccountDataStatic(for: address, access: access)
         }
     }
 
+    /// - Parameter access: The `FlowAccessActor` to use for account lookups.
+    ///   Defaults to the shared production singleton `FlowActors.access`.
+    ///   Pass a suite-local actor in tests to avoid mutating global state.
     public func processAccountsSafely(
         _ addresses: [Flow.Address],
-        maxConcurrent: Int = 8
+        maxConcurrent: Int = 8,
+        access: FlowAccessActor = FlowActors.access
     ) async -> [Flow.Address: Result<FlowData, Error>] {
         await processSafely(
             addresses,
             maxConcurrent: maxConcurrent
         ) { address in
-            try await BatchProcessor.fetchAccountDataStatic(for: address)
+            try await BatchProcessor.fetchAccountDataStatic(for: address, access: access)
         }
     }
 
@@ -194,9 +202,11 @@ public actor BatchProcessor {
 
     // MARK: - Internal helpers
 
-    private static func fetchAccountDataStatic(for address: Flow.Address) async throws -> FlowData {
-        // `currentClient` is a computed property — no parentheses.
-        let api = await FlowActors.access.currentClient
+    private static func fetchAccountDataStatic(
+        for address: Flow.Address,
+        access: FlowAccessActor
+    ) async throws -> FlowData {
+        let api = await access.currentClient
         let account = try await api.getAccountAtLatestBlock(
             address: address.description
         )

@@ -17,6 +17,8 @@
 //  limitations under the License.
 //  Migrated from XCTest to Swift Testing by Nicholas Reich on 2026-03-19.
 //  Updated for Swift 6 concurrency migration on 2026-03-29.
+//  Refactored: replaced Flow.shared.configure() with suite-local FlowAccessActor
+//  to eliminate global state mutation 2026-09-15.
 //
 
 @testable import BigInt
@@ -27,9 +29,8 @@ import Testing
 
 @Suite
 struct CodableTests {
-    let flow = Flow()
-
-    var flowAPI: FlowAccessProtocol!
+    // Suite-local HTTP access API — does NOT touch FlowActors.access singleton.
+    private let flowAPI: any FlowAccessProtocol
 
     var addressC = Flow.Address(hex: "0xe242ccfb4b8ea3e2")
 
@@ -45,9 +46,10 @@ struct CodableTests {
             .hexValue
     )
 
-    init() async {
-        flowAPI = flow.createHTTPAccessAPI(chainID: Flow.ChainID.testnet)
-        await flow.configure(chainID: Flow.ChainID.testnet)
+    init() {
+        // Create a dedicated HTTP client for this suite via an instance — no
+        // static call, and the global singleton is never configured or mutated.
+        flowAPI = Flow().createHTTPAccessAPI(chainID: .testnet)
     }
 
     @Test(
@@ -74,10 +76,13 @@ struct CodableTests {
             weight: 1000
         )
 
-        await flow.configure(chainID: Flow.ChainID.testnet)
+        // Build against a fresh suite-local access actor — not the global singleton.
+        let access = FlowAccessActor()
+        await access.configure(chainID: .testnet, accessAPI: flowAPI)
 
-        let unsignedTx = try await flow.buildTransaction(
-            chainID: Flow.ChainID.testnet
+        let unsignedTx = try await Flow.shared.buildTransaction(
+            chainID: .testnet,
+            access: access
         ) {
             cadence {
                 """
@@ -110,7 +115,7 @@ struct CodableTests {
             }
         }
 
-        let signedTx = try await flow.signTransaction(
+        let signedTx = try await Flow.shared.signTransaction(
             unsignedTransaction: unsignedTx,
             signers: signers
         )

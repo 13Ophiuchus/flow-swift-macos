@@ -63,11 +63,15 @@ public extension Flow.ID {
     /// Wait until the transaction reaches at least the desired status, or times out.
     /// Currently implemented via HTTP polling; WebSocket streaming can be reintroduced
     /// by extending FlowWebSocketCenter later.
+    /// - Parameter access: The `FlowAccessActor` to poll. Defaults to the
+    ///   shared production singleton `FlowActors.access`. Pass a suite-local
+    ///   actor in tests to avoid mutating global state.
     func once(
         status desiredStatus: Flow.Transaction.Status,
-        timeout: TimeInterval = 60
+        timeout: TimeInterval = 60,
+        access: FlowAccessActor = FlowActors.access
     ) async throws -> Flow.TransactionResult {
-        let api = await FlowActors.access.currentClient
+        let api = await access.currentClient
         let deadline = Date().addingTimeInterval(timeout)
 
         while Date() < deadline {

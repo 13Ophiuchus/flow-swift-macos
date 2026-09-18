@@ -22,19 +22,22 @@ public protocol CadenceTargetType {
 // MARK: - Generic execution extensions on Flow
 
 public extension Flow {
-    /// Query with generic return type
+    /// Query with generic return type.
+    ///
+    /// - Parameter access: The `FlowAccessActor` to use for the RPC call.
+    ///   Defaults to the global `FlowActors.access` singleton for production
+    ///   callers. Pass a suite-local actor in tests to avoid global state mutation.
     func query<T: Decodable>(
         _ target: CadenceTargetType,
-        chainID _: Flow.ChainID = .mainnet
+        chainID _: Flow.ChainID = .mainnet,
+        access: FlowAccessActor = FlowActors.access
     ) async throws -> T {
         guard let data = Data(base64Encoded: target.cadenceBase64) else {
             throw NSError(domain: "Invalid Cadence Base64 String", code: 9_900_001)
         }
 
         let script = Flow.Script(data: data)
-
-        // Use the shared access client managed by your global actor.
-        let api = await FlowActors.access.currentClient
+        let api = await access.currentClient
 
         let response = try await api.executeScriptAtLatestBlock(
             script: script,
@@ -44,11 +47,16 @@ public extension Flow {
         return try response.decode()
     }
 
-    /// Transaction with generic argument building
+    /// Build, sign, and send a transaction from a `CadenceTargetType`.
+    ///
+    /// - Parameter access: The `FlowAccessActor` to use for the RPC call.
+    ///   Defaults to the global `FlowActors.access` singleton for production
+    ///   callers. Pass a suite-local actor in tests to avoid global state mutation.
     func sendTransaction<T: CadenceTargetType>(
         _ target: T,
         signers: [FlowSigner],
-        chainID: Flow.ChainID = .mainnet
+        chainID: Flow.ChainID = .mainnet,
+        access: FlowAccessActor = FlowActors.access
     ) async throws -> Flow.ID {
         guard let data = Data(base64Encoded: target.cadenceBase64) else {
             throw NSError(domain: "Invalid Cadence Base64 String", code: 9_900_001)
@@ -59,7 +67,8 @@ public extension Flow {
         // Empty result-builder body: no additional TransactionBuild steps.
         var tx = try await buildTransaction(
             chainID: chainID,
-            skipEmptyCheck: true
+            skipEmptyCheck: true,
+            access: access
         ) {
             // nothing
         }
@@ -72,6 +81,6 @@ public extension Flow {
             signers: signers
         )
 
-        return try await sendTransaction(transaction: signedTx)
+        return try await sendTransaction(signedTransaction: signedTx, access: access)
     }
 }

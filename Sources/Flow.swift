@@ -33,11 +33,13 @@ public final class Flow: @unchecked Sendable {
     }
 
     public func configure(chainID: ChainID) async {
-        await FlowActors.access.configure(chainID: chainID, accessAPI: nil)
+        // syncConfig: true — this is the production entry point; keep
+        // FlowActors.config in sync so Flow.chainID reflects the new chain.
+        await FlowActors.access.configure(chainID: chainID, accessAPI: nil, syncConfig: true)
     }
 
     public func configure(chainID: ChainID, accessAPI: FlowAccessProtocol) async {
-        await FlowActors.access.configure(chainID: chainID, accessAPI: accessAPI)
+        await FlowActors.access.configure(chainID: chainID, accessAPI: accessAPI, syncConfig: true)
     }
 
     public func createHTTPAccessAPI(chainID: ChainID) -> FlowAccessProtocol {

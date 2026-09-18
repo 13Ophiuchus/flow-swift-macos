@@ -4,6 +4,9 @@
 //
 //  Created by Hao Fu on 23/4/2025.
 //  Migrated from XCTest to Swift Testing by Nicholas Reich on 2026-03-19.
+//  Refactored to eliminate FlowAccessActor.shared mutation by Nicholas Reich on 2026-09-15.
+//
+//  Each suite owns a private TestFlowActor — the global singleton is never touched.
 //
 
 import CryptoKit
@@ -112,51 +115,91 @@ extension CadenceTargetType {
     }
 }
 
-@Suite(.serialized)
-@FlowActor
+// MARK: - Unit tests — no global state mutation
+
+@Suite
 struct CadenceTargetTests {
+    // Suite-local actor: never touches FlowAccessActor.shared
+    private let access: FlowAccessActor
+
     init() async {
-        await FlowAccessActor.shared.configure(chainID: .testnet)
+        let a = FlowAccessActor()
+        await a.configure(chainID: .testnet)
+        access = a
     }
 
     @Test
     func usesTestnet() async throws {
         // Use a mock: the fixture signer uses a dummy, non-registered key, so a
-        // real testnet node would always reject the transaction's signature
-        // even if we signed the envelope. This test verifies transaction
-        // construction end-to-end without depending on live network state.
-        //
-        // withTestFlowContext scopes the mutation to this test only and restores
-        // the previous shared chainID/client afterward, preventing cross-test
-        // pollution of the FlowAccessActor.shared singleton.
+        // real testnet node would always reject the transaction's signature.
+        // This test verifies transaction construction end-to-end without
+        // depending on live network state.
         let mock = MockFlowAccessAPI()
         let expectedID = Flow.ID(hex: "0xaaaaaaaa00000000000000000000000000000000000000000000000000000000")
         mock.stub_sendTransactionID = expectedID
 
-        try await withTestFlowContext(chainID: .testnet, accessAPI: mock) {
-            let fixtures = TestnetFixtures()
-            let target = TestCadenceTarget.logTx(test: "testnet")
+        // Reconfigure the suite-local actor with the mock — no global mutation.
+        await access.configure(chainID: .testnet, accessAPI: mock)
 
-            var tx = try target.makeTransaction(
-                payer: fixtures.addressA,
-                proposer: fixtures.addressA,
-                authorizers: [fixtures.addressA, fixtures.addressB, fixtures.addressC]
-            )
-            tx.envelopeSignatures = [
-                .init(address: fixtures.addressA, keyIndex: 0, signature: Data([0x01])),
-            ]
+        let fixtures = TestnetFixtures()
+        let target = TestCadenceTarget.logTx(test: "testnet")
 
-            let id = try await FlowAccessActor.shared.sendTransaction(
-                transaction: tx
-            )
-            #expect(id == expectedID)
-        }
+        var tx = try target.makeTransaction(
+            payer: fixtures.addressA,
+            proposer: fixtures.addressA,
+            authorizers: [fixtures.addressA, fixtures.addressB, fixtures.addressC]
+        )
+        tx.envelopeSignatures = [
+            .init(address: fixtures.addressA, keyIndex: 0, signature: Data([0x01])),
+        ]
+
+        let id = try await access.sendTransaction(transaction: tx)
+        #expect(id == expectedID)
     }
 
     @Test
     func canSwitchNetworks() async throws {
-        await FlowAccessActor.shared.configure(chainID: .mainnet)
-        await FlowAccessActor.shared.configure(chainID: .testnet)
+        await access.configure(chainID: .mainnet)
+        await access.configure(chainID: .testnet)
         #expect(Bool(true))
+    }
+}
+
+// MARK: - Isolated actor test (no global mutation)
+
+/// Uses a suite-local FlowAccessActor — never touches FlowActors.access.
+@Suite(.serialized)
+@FlowActor
+struct CadenceTargetIntegrationTests {
+    private let access: FlowAccessActor
+    private let mock: MockFlowAccessAPI
+
+    init() async {
+        let m = MockFlowAccessAPI()
+        let a = FlowAccessActor(initialChainID: .testnet)
+        await a.configure(chainID: .testnet, accessAPI: m)
+        mock = m
+        access = a
+    }
+
+    @Test
+    func usesTestnetViaContext() async throws {
+        let expectedID = Flow.ID(hex: "0xaaaaaaaa00000000000000000000000000000000000000000000000000000000")
+        mock.stub_sendTransactionID = expectedID
+
+        let fixtures = TestnetFixtures()
+        let target = TestCadenceTarget.logTx(test: "testnet")
+
+        var tx = try target.makeTransaction(
+            payer: fixtures.addressA,
+            proposer: fixtures.addressA,
+            authorizers: [fixtures.addressA, fixtures.addressB, fixtures.addressC]
+        )
+        tx.envelopeSignatures = [
+            .init(address: fixtures.addressA, keyIndex: 0, signature: Data([0x01])),
+        ]
+
+        let id = try await access.sendTransaction(transaction: tx)
+        #expect(id == expectedID)
     }
 }

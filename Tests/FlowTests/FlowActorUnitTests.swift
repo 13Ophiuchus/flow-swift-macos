@@ -71,8 +71,11 @@ struct FlowAccessActorTests {
     @Test("ping propagates thrown error")
     func pingThrows() async {
         mock.stub_error = MockError.intentional("ping failure")
-        await #expect(throws: MockError.self) {
-            try await access.ping()
+        do {
+        _ = try await access.ping()
+            Issue.record("Expected MockError to be thrown — but no error was thrown")
+        } catch {
+            #expect(error is MockError)
         }
     }
 
@@ -117,12 +120,15 @@ struct FlowAccessActorTests {
     @Test("Error from API surfaces through actor")
     func errorPropagates() async {
         mock.stub_error = Flow.FError.customError(msg: "test error")
-        await #expect(throws: Flow.FError.self) {
-            try await access.executeScriptAtLatestBlock(
-                script: Flow.Script(text: ""),
-                arguments: [],
-                blockStatus: Flow.BlockStatus.final
-            )
+        do {
+        _ = try await access.executeScriptAtLatestBlock(
+            script: Flow.Script(text: ""),
+            arguments: [],
+            blockStatus: Flow.BlockStatus.final
+        )
+            Issue.record("Expected Flow.FError to be thrown — but no error was thrown")
+        } catch {
+            #expect(error is Flow.FError)
         }
     }
 }
@@ -239,28 +245,34 @@ struct BuildTransactionTests {
 
     @Test("buildTransaction propagates emptyProposer error")
     func missingProposerThrows() async {
-        await #expect(throws: Flow.FError.self) {
-            try await Flow.shared.buildTransaction(
-                chainID: .testnet,
-                access: access
-            ) {
-                cadence { "access(all) fun main() {}" }
-                payer { testAddress.hex }
-            }
+        do {
+        _ = try await Flow.shared.buildTransaction(
+            chainID: .testnet,
+            access: access
+        ) {
+            cadence { "access(all) fun main() {}" }
+            payer { testAddress.hex }
+        }
+            Issue.record("Expected Flow.FError to be thrown — but no error was thrown")
+        } catch {
+            #expect(error is Flow.FError)
         }
     }
 
     @Test("buildTransaction propagates invalidScript error")
     func emptyScriptThrows() async {
-        await #expect(throws: Flow.FError.self) {
-            try await Flow.shared.buildTransaction(
-                chainID: .testnet,
-                access: access
-            ) {
-                cadence { "" }
-                proposer { testAddress.hex }
-                payer { testAddress.hex }
-            }
+        do {
+        _ = try await Flow.shared.buildTransaction(
+            chainID: .testnet,
+            access: access
+        ) {
+            cadence { "" }
+            proposer { testAddress.hex }
+            payer { testAddress.hex }
+        }
+            Issue.record("Expected Flow.FError to be thrown — but no error was thrown")
+        } catch {
+            #expect(error is Flow.FError)
         }
     }
 

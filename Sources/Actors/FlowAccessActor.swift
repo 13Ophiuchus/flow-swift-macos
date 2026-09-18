@@ -16,18 +16,29 @@ public actor FlowAccessActor {
         client = FlowHTTPAPI(chainID: initialChainID)
     }
 
+    /// Configure this actor's underlying API client.
+    ///
+    /// Pass `syncConfig: true` (the default for the global singleton via
+    /// `Flow.shared.configure`) to also update `FlowActors.config` so that
+    /// `Flow.chainID` reflects the new chain. Pass `syncConfig: false` when
+    /// configuring a **suite-local** actor in tests to avoid mutating global
+    /// state from concurrent test suites.
     public func configure(
         chainID: Flow.ChainID,
-        accessAPI: (any FlowAccessProtocol)? = nil
+        accessAPI: (any FlowAccessProtocol)? = nil,
+        syncConfig: Bool = false
     ) async {
         if let accessAPI {
             client = accessAPI
         } else {
             client = FlowHTTPAPI(chainID: chainID)
         }
-        // Keep FlowConfigActor's chainID in sync, since Flow.chainID and other
-        // call sites read from FlowActors.config rather than this actor.
-        await FlowActors.config.updateChainID(chainID)
+        if syncConfig {
+            // Keep FlowConfigActor's chainID in sync for production callers.
+            // Test code must pass syncConfig: false (the default) so that
+            // suite-local actors do not race against FlowActors.config.
+            await FlowActors.config.updateChainID(chainID)
+        }
     }
 
     public var currentClient: any FlowAccessProtocol {
