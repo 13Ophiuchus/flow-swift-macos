@@ -8,13 +8,7 @@ import Foundation
 //
 //  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 
-#if canImport(SwiftUI)
 
-
-import SwiftUI
-
-
-#endif
 
 public extension CadenceLoader.Category {
     enum Child: String, CaseIterable, CadenceLoaderProtocol {
