@@ -9,15 +9,11 @@ import Foundation
 //  Edited for Swift 6 concurrency & actors by Nicholas Reich on 2026-03-19.
 
 #if canImport(SwiftUI)
-    #if canImport(SwiftUI)
-        #if canImport(SwiftUI)
-            #if canImport(SwiftUI)
-                #if canImport(SwiftUI)
-                    import SwiftUI
-                #endif
-            #endif
-        #endif
-    #endif
+
+
+import SwiftUI
+
+
 #endif
 
 public extension CadenceLoader.Category {
