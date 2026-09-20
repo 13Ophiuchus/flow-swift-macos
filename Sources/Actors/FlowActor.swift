@@ -14,7 +14,7 @@ public struct FlowActor {
 }
 
 public actor FlowActorImpl {
-    public func run<R>(
+    public func run<R: Sendable>(
         _ operation: @Sendable @escaping () async throws -> R
     ) async rethrows -> R {
         try await operation()

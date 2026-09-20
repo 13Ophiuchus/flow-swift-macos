@@ -41,12 +41,12 @@ public extension Flow {
     }
 }
 
-extension Flow.ScriptResponse: @FlowActor FlowDecodable {
+extension Flow.ScriptResponse: FlowDecodable {
     public func decode() -> Any? {
         fields?.decode()
     }
 
-    @FlowActor public func decode<T>(_ decodable: T.Type) throws -> T where T: Decodable {
+    public func decode<T>(_ decodable: T.Type) throws -> T where T: Decodable {
         guard let result: T = try? fields?.decode(decodable) else {
             throw Flow.FError.decodeFailure
         }
