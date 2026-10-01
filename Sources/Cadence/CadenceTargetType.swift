@@ -64,13 +64,23 @@ public extension Flow {
 
         let script = Flow.Script(data: data)
 
-        // Empty result-builder body: no additional TransactionBuild steps.
+        guard let firstSigner = signers.first else {
+            throw NSError(domain: "No signers provided for transaction", code: 9_900_002)
+        }
+        let proposalKey = Flow.TransactionProposalKey(
+            address: firstSigner.address,
+            keyIndex: firstSigner.keyIndex
+        )
+
         var tx = try await buildTransaction(
             chainID: chainID,
             skipEmptyCheck: true,
             access: access
         ) {
-            // nothing
+            proposer { proposalKey }
+            payer { firstSigner.address }
+            authorizers { [firstSigner.address] }
+            gasLimit { 9999 }
         }
 
         tx.script = script
